@@ -97,11 +97,15 @@ using namespace std;
 class Pig
 {
 private:
-
+  int flip;
+  bool playerStart;
 public:
   void sayHi();
   void gameMenu();
-  int coinFlip();
+  void coinFlip();
+  void playPig();
+  void playerMove();
+  void compMove();
 };
 
 int main()
@@ -111,6 +115,9 @@ int main()
   game.sayHi();
   game.gameMenu();
   game.coinFlip();
+  game.playPig();
+
+  // bool playerStart = game.coinFlip();
 }
 
 void Pig::sayHi()
@@ -123,12 +130,58 @@ void Pig::gameMenu()
   cout << "Generic menu.\n";
 }
 
-int Pig::coinFlip()
+void Pig::coinFlip()
 {
-  int flip = (rand() % 2);
+  flip = (rand() % 2);
+
   if (flip == 0)
+  {
     cout << "player\n";
+    playerStart = true;
+  }
   else
+  {
+    playerStart = false;
     cout << "cpu\n";
-  return flip;
+  }
 }
+
+void Pig::playPig()
+{
+  if (playerStart == true)
+    playerMove();
+  else
+    compMove();
+}
+
+void Pig::playerMove()
+{
+  cout << "Here's the player move.\n";
+}
+
+void Pig::compMove()
+{
+  cout << "Here's the computer move.\n";
+}
+
+/*
+bool Pig::coinFlip()
+{
+  bool playerStart;
+
+  flip = (rand() % 2);
+
+  if (flip == 0)
+  {
+    cout << "player\n";
+    playerStart = true;
+  }
+  else
+  {
+    playerStart = false;
+    cout << "cpu\n";
+  }
+
+  return playerStart;
+}
+*/
