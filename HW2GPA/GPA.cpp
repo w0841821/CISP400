@@ -1,6 +1,3 @@
-#include <iostream>
-using namespace std;
-
 /*
 
 // Specification C1 - Pseudo Dynamic Array
@@ -51,7 +48,6 @@ Log the grades to a text file for archival purposes.
 
 
 /*
-Create a program which will accept an unlimited number of scores and calculates the average score.
 
 You will also need to prompt for the total points possible. Assume each test is worth 100 points.
 
@@ -65,86 +61,44 @@ That triggers final processing.
 
 */
 
-class Grades
+#include <iostream>
+using namespace std;
+
+class GPA
 {
 private:
-	int* scoreArr = nullptr;
-	int numStudents,
-		totalPoints,
-		totalScores,
-		totalRows;
+	int** gpaArray = nullptr;
+	int totalPoints, scores, rows, cols, stuID, students = 1;
+	char moreStudents;
+
 public:
-	void newScoreArr();
-	void incScoreArr();
 	void sayHi();
 	void getTotal();
-	void addScores();
-	void getID();
-	void getScores();
+	void buildArray();
+	void ask();
+	void incArray();
+	void printArray();
 };
 
-int main() {
-	Grades hw2;
-	hw2.newScoreArr();
-	hw2.sayHi();
-	hw2.getTotal();
-
-	char done;
-	do {
-		do {
-			hw2.getID();
-			hw2.getScores();
-			cout << "Done? ";
-			cin >> done;
-		} while(done != 'y');
-		hw2.incScoreArr();
-	} while(done != 'y');
-
-
-}
-
-void Grades::newScoreArr()
+int main()
 {
-	// initialize array and counter for 1 student
-	scoreArr = new int [1][];
-	numStudents = 1;
+	GPA gpaArr;
+	gpaArr.sayHi();
+	gpaArr.getTotal();
+	gpaArr.buildArray();
+	gpaArr.ask();
+	gpaArr.printArray();
+
+	return 0;
 }
 
-void Grades::incScoreArr()
-{
-	numStudents++;
-	int** tmpSize = nullptr;
-	tmpSize = new int* [totalRows];
-
-	for (int i = 0; i < totalRows; i++)
-		tmpSize[i] = new int[numStudents];
-
-	for (int i = 0; i < (numStudents - 1); i++)
-		for (int j = 0; j < totalRows; j++)
-			tmpSize[j][i] = scoreArr[j][i];
-
-	/*
-	int** tmpSize = new int* [totalRows];
-	for (int i = 0; i < totalRows; i++)
-		tmpSize[i] = new int[numStudents];
-		*/
-
-	// copy original array to temp/incremented array
-
-	// delete temp array
-	delete [] scoreArr;
-
-	scoreArr = tmpSize;
-	tmpSize = nullptr;
-}
-
-void Grades::sayHi()
+void GPA::sayHi()
 {
 	cout << "At any point during the grade-recording process, you may enter 'calc' to begin\ngrade calculation.\n";
 	cout << "Caution: if 'calc' is entered before the current student's grades are entered,\nthey will be assigned a 0 for all remaining tests!\n\n";
 }
 
-void Grades::getTotal()
+void GPA::getTotal()
 {
 	cout << "What is the total amount of points for the class?\n";
 	do {
@@ -156,38 +110,82 @@ void Grades::getTotal()
 		}
 	} while((totalPoints % 100) != 0);
 
-	totalScores = totalPoints / 100;
-	totalRows = totalScores + 1;
+	scores = totalPoints / 100;
 
-	cout << "\nWith " << totalPoints << " total points for the class, and each test worth 100 points, we will entering " << totalScores << " test scores.\n\n";
+	cout << "\nWith " << totalPoints << " total points for the class, and each test worth 100 points, we will entering " << scores << " test scores.\n\n";
 }
 
-void Grades::addScores()
+void GPA::buildArray()
 {
-	int* tmpSize = nullptr;
-	tmpSize = new int[totalRows];
-	delete [] scoreArr;
-	scoreArr = tmpSize;
-	tmpSize = nullptr;
+	/*
+	Array is built in the form of...
+
+							col0				col1				col2		-->
+	row0  |  Student1  |	score1  | 	score2	etc
+	row1  |  Student2  |	score1  | 	score2
+	row2  |  Student3  |	score1  | 	score2
+	 \/			etc
+
+	*/
+	rows = students;
+	cols = scores + 1; // first column is student ID, followed by the number of tests
+	gpaArray = new int* [rows];
+	for (int i = 0; i < rows; i++)
+		gpaArray[i] = new int [cols];
 }
 
-void Grades::getID()
+void GPA::ask()
 {
-	cout << "Enter student ID: ";
-	cin >> scoreArr[0];
-	cout << "Student 0: " << scoreArr[0] << endl;
+	do {
+		cout << "\nStudent ID: ";
+		cin >> stuID;
+		gpaArray[(students - 1)][0] = stuID;
+
+		for (int i = 1; i < cols; i++)
+		{
+			cout << "Score #" << i << ": ";
+			cin >> gpaArray[(students - 1)][i];
+		}
+
+		cout << "Another student? ";
+		cin >> moreStudents;
+		if (moreStudents == 'y')
+			incArray();
+	} while (moreStudents == 'y');
 }
 
-void Grades::getScores()
+void GPA::incArray()
 {
-	for (int i = 1; i < totalRows; i++)
+	students++;
+	int** tempCopy = nullptr;
+
+	tempCopy = new int* [students];
+
+	for (int i = 0; i < students; i++)
+		tempCopy[i] = new int [cols];
+
+	for (int i = 0; i < rows; i++)
 	{
-		cout << "Test score #" << i << ": ";
-		cin >> scoreArr[i];
+		cout << "Checking for success" << endl;
+		for (int j = 0; j < cols; j++)
+			tempCopy[i][j] = gpaArray[i][j];
 	}
 
-	cout << "Student ID\n";
+	for (int i = 0; i < rows; i++)
+		delete [] gpaArray[i];
+	delete [] gpaArray;
 
-	for (int i = 0; i < totalRows; i++)
-		cout << scoreArr[i] << "\t";
+	rows = students;
+	gpaArray = tempCopy;
+	tempCopy = nullptr;
+}
+
+void GPA::printArray()
+{
+	for (int i = 0; i < students; i++)
+	{
+		cout << "\nStudent: " << gpaArray[i][0] << endl;
+		for (int j = 1; j <= scores; j++)
+			cout << "Score #" << j << ": " << gpaArray[i][j] << endl;
+	}
 }
