@@ -54,6 +54,10 @@ That triggers final processing.
 
 */
 
+// GPA.cpp
+// Erroll Abrahamian, CISP 400
+// 02-17-2019
+
 #include <iostream>
 using namespace std;
 
