@@ -22,14 +22,7 @@ Create an array on the heap. Increase it automatically for every score the clien
 Only allow entry of a valid Student ID. See figure 1 for the criteria for a valid student ID. Quit if the Student ID is invalid.
 
 Student ID Business Logic.
-1. The Student ID must have 8 digits.
-2. The last digit must be even.
-3. The first 3 digits must be one of the
-following major codes: 127, 379, or
-833. That is, the ID must start with
-one of these three numbers.
-Figure 1: Business logic to validate
-Student ID.
+
 
 // Specification B3 - Letter Grades
 Include the letter grades for each individual test score you printed out under Specification C2.
@@ -76,6 +69,7 @@ public:
 	void getTotal();
 	void buildArray();
 	void ask();
+	bool checkID();
 	void incArray();
 	void printArray();
 };
@@ -126,9 +120,12 @@ void GPA::buildArray()
 	row2  |  Student3  |	score1  | 	score2
 	 \/			etc
 
+	Number of rows is always equal to number of students.
+	First column is student ID, followed by the number of tests.
 	*/
+
 	rows = students;
-	cols = scores + 1; // first column is student ID, followed by the number of tests
+	cols = scores + 1;
 	gpaArray = new int* [rows];
 	for (int i = 0; i < rows; i++)
 		gpaArray[i] = new int [cols];
@@ -137,8 +134,23 @@ void GPA::buildArray()
 void GPA::ask()
 {
 	do {
-		cout << "\nStudent ID: ";
-		cin >> stuID;
+		bool valid;
+
+		cout << "Please enter Student ID #" << students << ": ";
+
+		// check for a valid student ID
+		do {
+			cin >> stuID;
+
+			// plenty of things to check for...
+			valid = checkID();
+			if (!valid)
+			{
+				cout << "Student IDs must be 8 digits, even, and start with 127, 379, or 833.\n";
+				cout << "What is the Student ID? ";
+			}
+		} while(!valid);
+		// first student is row 0, second is row 1 etc, so "students - 1"
 		gpaArray[(students - 1)][0] = stuID;
 
 		for (int i = 1; i < cols; i++)
@@ -147,35 +159,57 @@ void GPA::ask()
 			cin >> gpaArray[(students - 1)][i];
 		}
 
-		cout << "Another student? ";
+		cout << "Would you like to enter another student? ('y' or any other key to decline)";
 		cin >> moreStudents;
-		if (moreStudents == 'y')
+
+		// increment the array if we want to enter another student
+		if (toupper(moreStudents == 'Y'))
 			incArray();
-	} while (moreStudents == 'y');
+	} while (toupper(moreStudents == 'Y'));
+}
+
+bool GPA::checkID()
+{
+	// is the Student ID even?...
+	if ((stuID % 2) != 0)
+		return false;
+
+	// ...what about in range?
+	else if ((stuID < 12700000) || (stuID >= 12800000 && stuID <= 37899999) || (stuID >= 38000000 && stuID <= 83299999) || (stuID >= 83400000))
+		return false;
+
+	// must be good then!
+	else
+		return true;
 }
 
 void GPA::incArray()
 {
+	// one extra student...otherwise why are we incrementing an array?!
 	students++;
-	int** tempCopy = nullptr;
 
+	// create temp array for copying purposes
+	int** tempCopy = nullptr;
 	tempCopy = new int* [students];
 
+	// larger array needs student count for rows
 	for (int i = 0; i < students; i++)
 		tempCopy[i] = new int [cols];
 
+	// original, smaller array has one less row
 	for (int i = 0; i < rows; i++)
-	{
-		cout << "Checking for success" << endl;
 		for (int j = 0; j < cols; j++)
 			tempCopy[i][j] = gpaArray[i][j];
-	}
 
+	// delete those arrays!
 	for (int i = 0; i < rows; i++)
 		delete [] gpaArray[i];
 	delete [] gpaArray;
 
+	// number of rows can now be set to number of students
 	rows = students;
+
+	// array cleanup
 	gpaArray = tempCopy;
 	tempCopy = nullptr;
 }
