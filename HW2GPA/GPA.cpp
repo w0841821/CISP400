@@ -1,42 +1,14 @@
 /*
 
-// Specification C1 - Pseudo Dynamic Array
-Create a fixed sized array in the heap. In this case, unlimited number of scores means 100.
-
-// Specification C2 - Print Scores
-After all the grades have been entered again, print them all to screen.
-
 // Specification C3 - Compute GPA
 Compute the average grade for the client and display it.
-
-// Specification C4 - Validate Test Scores
-Determine if each score is within the range of 0 - 100. Reprompt if that’s not the case.
 
 // Specification C5 - Print Letter Grade
 Print the letter grade for the overall gpa right next to it raw number.
 
-// Specification B1 - Dynamic Array
-Create an array on the heap. Increase it automatically for every score the client adds. That is, this array should be as small as possible - always. This replaces specification C1. Put this comment either above or below C1 and change C1 to this: // Specification C1 - REPLACED
-
-//Specification B2 - Validate Student ID
-Only allow entry of a valid Student ID. See figure 1 for the criteria for a valid student ID. Quit if the Student ID is invalid.
-
-Student ID Business Logic.
-
-
 // Specification B3 - Letter Grades
 Include the letter grades for each individual test score you printed out under Specification C2.
 
-// Specification A1 - OOP
-Code this assignment using at least one class. Put this comment
-above the class declaration.
-
-// Specification A2 - Sort Grades
-Sort the grades before printing them under specification C2. High
-to low. Use any sort you wish, but code your own sort.
-
-// Specification A3 - Logfile
-Log the grades to a text file for archival purposes.
 */
 
 // GPA.cpp
@@ -45,8 +17,10 @@ Log the grades to a text file for archival purposes.
 
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 using namespace std;
 
+// Specification A1 - OOP
 class GPA
 {
 private:
@@ -87,6 +61,9 @@ void GPA::sayHi()
 void GPA::buildArray()
 {
 	numScores = 0;
+
+	// Specification C1 - REPLACED
+	// Specification B1 - Dynamic Array
   gpaArray = new int[1];
 	scoreArray = new int[1];
 }
@@ -132,6 +109,7 @@ void GPA::getID()
 		} while(!valid);
 }
 
+//Specification B2 - Validate Student ID
 bool GPA::checkID()
 {
 	// is the Student ID even?...
@@ -160,6 +138,7 @@ void GPA::getScores()
 
 		convertString();
 
+		// Specification C4 - Validate Test Scores
 		if (convInt >= 0 && convInt <= 100)
 		{
 			incArray();
@@ -174,6 +153,7 @@ void GPA::getScores()
 		scoreArray[i] = i + 1;
 }
 
+// Specification A2 - Sort Grades
 void GPA::sortScores()
 {
 	bool swapped;
@@ -216,15 +196,28 @@ void GPA::convertString()
 	}
 }
 
+// Specification C2 - Print Scores
 void GPA::printArray()
 {
-  cout << "Scores for Student ID: " << stuID << endl;
+	// Specification A3 - Logfile
+	ofstream scoresFile;
+	scoresFile.open("scores.txt", ios::app);
+  cout << "\nScores for Student ID: " << stuID << endl;
+	scoresFile << "\n\nScores for Student ID: " << stuID << endl;
 	for (int i = 0; i < numScores; i++)
 	{
 		cout << "#" << right << setw(3) << scoreArray[i] << ": " << right << setw(3) << gpaArray[i];
-		if ((i > 0) && (((i + 1) % 5) == 0))
+		scoresFile << "#" << right << setw(3) << scoreArray[i] << ": " << right << setw(3) << gpaArray[i];
+		if ((i + 1) % 5 == 0)
+		{
 			cout << endl;
-		else if (i != numScores)
+			scoresFile << endl;
+		}
+		else if (i != (numScores - 1))
+		{
 			cout << "     ";
+			scoresFile << "     ";
+		}
 	}
+	scoresFile.close();
 }
