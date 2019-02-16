@@ -1,16 +1,3 @@
-/*
-
-// Specification C3 - Compute GPA
-Compute the average grade for the client and display it.
-
-// Specification C5 - Print Letter Grade
-Print the letter grade for the overall gpa right next to it raw number.
-
-// Specification B3 - Letter Grades
-Include the letter grades for each individual test score you printed out under Specification C2.
-
-*/
-
 // GPA.cpp
 // Erroll Abrahamian, CISP 400
 // 02-17-2019
@@ -38,6 +25,8 @@ public:
 	void getScores();
 	void sortScores();
   void convertString();
+  char letterGrade(int);
+  int computeGPA(int);
   void printArray();
 };
 
@@ -55,7 +44,8 @@ int main()
 
 void GPA::sayHi()
 {
-	cout << "At any point during the grade-recording process, you may enter 'calc' to begin\ngrade calculation.\n";
+  cout << "Hello! Are you ready to enter some scores and get some grades?\nI know you are...so let's do it!\n\n";
+	cout << "At any point during the grade-recording process, you may enter 'calc' to begin\ngrade calculation.\n\n";
 }
 
 void GPA::buildArray()
@@ -71,8 +61,10 @@ void GPA::buildArray()
 void GPA::incArray()
 {
   numScores++;
+
   int* tmpGPA = nullptr;
 	int* tmpScore = nullptr;
+
   tmpGPA = new int[numScores];
 	tmpScore = new int[numScores];
 
@@ -95,6 +87,7 @@ void GPA::getID()
 
   cout << "Please enter the Student ID: ";
 
+  // loop until a valid student ID is entered
   do {
 			cin >> stuID;
 
@@ -130,26 +123,32 @@ void GPA::getScores()
   do {
 		cout << "Score #" << (numScores + 1) << ": ";
 		cin >> scoreEntry;
+
+    // check if it's time to calculate...
 		if (scoreEntry == "calc")
 		{
 			calcTime = true;
 			break;
 		}
 
-		convertString();
+    // ...otherwise, convert to an int for gradekeeping
+    convertString();
 
 		// Specification C4 - Validate Test Scores
 		if (convInt >= 0 && convInt <= 100)
 		{
 			incArray();
+
+      // store the converted int as the grade element
 			gpaArray[numScores - 1] = convInt;
 		}
 		else
-			cout << "Not a valid score entry.\n";
+			cout << "Not a valid score entry. Let's stick to 0-100 :)\n";
 
 	} while(!calcTime);
 
-	for (int i = 0; i < numScores; i++)
+  // populate the score number elements after we know how many scores were entered
+  for (int i = 0; i < numScores; i++)
 		scoreArray[i] = i + 1;
 }
 
@@ -159,6 +158,7 @@ void GPA::sortScores()
 	bool swapped;
 	int tmpSwap;
 
+  // bubble sort goodness
 	for (int i = 0; i < numScores; i++)
 	{
 		swapped = false;
@@ -166,11 +166,13 @@ void GPA::sortScores()
 		{
 			if (gpaArray[j] < gpaArray[j + 1])
 			{
+        // swap the grade/score array elements
 				tmpSwap = gpaArray[j];
 				gpaArray[j] = gpaArray[j + 1];
 				gpaArray[j + 1] = tmpSwap;
 
-				tmpSwap = scoreArray[j];
+        // swap the score number elements
+        tmpSwap = scoreArray[j];
 				scoreArray[j] = scoreArray[j + 1];
 				scoreArray[j + 1] = tmpSwap;
 
@@ -188,6 +190,7 @@ void GPA::convertString()
   int count = 1;
 	convInt = 0;
 
+  // fun math to convert a string entry to an int
 	int strLength = scoreEntry.length();
 	for (int i = (strLength - 1); i >= 0; i--)
 	{
@@ -196,28 +199,83 @@ void GPA::convertString()
 	}
 }
 
+char GPA::letterGrade(int grade)
+{
+  if (grade >= 90)
+    return 'A';
+  else if (grade >= 80)
+    return 'B';
+  else if (grade >= 70)
+    return 'C';
+  else if (grade >= 60)
+    return 'D';
+  else
+    return 'F';
+}
+
+int GPA::computeGPA(int grade)
+{
+  if (grade >= 90)
+    return 4;
+  else if (grade >= 80)
+    return 3;
+  else if (grade >= 70)
+    return 2;
+  else if (grade >= 60)
+    return 1;
+  else
+    return 0;
+}
+
 // Specification C2 - Print Scores
 void GPA::printArray()
 {
+  // ltrGr to get a letter grade
+  char ltrGr;
+  int totalPoints = 0;
+
 	// Specification A3 - Logfile
 	ofstream scoresFile;
 	scoresFile.open("scores.txt", ios::app);
+
   cout << "\nScores for Student ID: " << stuID << endl;
 	scoresFile << "\n\nScores for Student ID: " << stuID << endl;
+
 	for (int i = 0; i < numScores; i++)
 	{
-		cout << "#" << right << setw(3) << scoreArray[i] << ": " << right << setw(3) << gpaArray[i];
+    // Specification B3 - Letter Grades
+    ltrGr = letterGrade(gpaArray[i]);
+		cout << "#" << right << setw(3) << scoreArray[i] << ": " << right << setw(3) << gpaArray[i] << " (" << ltrGr << ")";
 		scoresFile << "#" << right << setw(3) << scoreArray[i] << ": " << right << setw(3) << gpaArray[i];
-		if ((i + 1) % 5 == 0)
+
+    // enter a line break after every three scores for readability
+    if ((i + 1) % 3 == 0)
 		{
 			cout << endl;
 			scoresFile << endl;
 		}
+
+    // if we aren't line breaking, then put some space between the scores
 		else if (i != (numScores - 1))
 		{
-			cout << "     ";
-			scoresFile << "     ";
+			cout << "        ";
+			scoresFile << "        ";
 		}
+
+    // keep track of the total points as we loop thru the array
+    totalPoints += gpaArray[i];
 	}
+
+  // Specification C3 - Compute GPA
+  // Specification C5 - Print Letter Grade
+  cout << "\nOverall grade: " << (totalPoints / numScores) << endl;
+  scoresFile << "\nOverall grade: " << (totalPoints / numScores) << endl;
+
+  cout << " Letter grade: " << letterGrade(totalPoints / numScores) << endl;
+  scoresFile << " Letter grade: " << letterGrade(totalPoints / numScores) << endl;
+
+  cout << "          GPA: " << computeGPA(totalPoints / numScores)<< endl;
+  scoresFile << "          GPA: " << computeGPA(totalPoints / numScores)<< endl;
+
 	scoresFile.close();
 }
