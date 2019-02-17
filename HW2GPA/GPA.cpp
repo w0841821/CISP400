@@ -17,6 +17,7 @@ private:
 	string scoreEntry;
   bool calcTime = false;
 public:
+  // function prototypes
   void sayHi();
   void buildArray();
 	void incArray();
@@ -230,7 +231,7 @@ int GPA::computeGPA(int grade)
 // Specification C2 - Print Scores
 void GPA::printArray()
 {
-  // ltrGr to get a letter grade
+  // ltrGr will be returned from letterGrade() to convert a number to letter grade (Spec B3 below)
   char ltrGr;
   int totalPoints = 0;
 
