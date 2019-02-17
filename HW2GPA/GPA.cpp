@@ -17,6 +17,7 @@ private:
 	string scoreEntry;
   bool calcTime = false;
 public:
+  // function prototypes
   void sayHi();
   void buildArray();
 	void incArray();
