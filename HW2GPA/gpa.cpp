@@ -1,4 +1,4 @@
-// GPA.cpp
+// gpa.cpp
 // Erroll Abrahamian, CISP 400
 // 02-17-2019
 
