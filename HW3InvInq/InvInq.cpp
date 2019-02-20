@@ -64,6 +64,7 @@ This is a menu driven program. You can decide if it uses a numeric or alphabetic
 */
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 using namespace std;
 
@@ -77,7 +78,7 @@ Date Added to Inventory -- System should enter this
 
 struct Inventory
 {
-  char itemDesc[23];
+  string itemDesc;
   int itemQuan;
   float itemCost;
   int itemDate[3];
@@ -87,12 +88,17 @@ class InvInq
 {
 private:
   Inventory* invArray = nullptr;
+  int itemCount;
 public:
   void buildArray();
   void printMenu();
   void addInv();
+  void incInv();
+  void delInv();
+  void editInv();
+  void showInv();
   void getDate();
-  void incInventory();
+  void delArray();
 };
 
 int main()
@@ -102,67 +108,125 @@ int main()
   hw3.buildArray();
 
   hw3.printMenu();
-  hw3.getDate();
-  hw3.incInventory();
 }
 
 void InvInq::buildArray()
 {
-
+  itemCount = 0;
   invArray = new Inventory[1];
 }
 
 void InvInq::printMenu()
 {
   int menu;
-  cout << "1. Add Inventory\n";
-  cout << "2. Delete Inventory\n";
-  cout << "3. Edit Inventory\n";
-  cout << "4. Display Inventory\n";
-  cout << "5. Quit Program\n\n";
 
-  cout << "Enter the number for your selection: ";
-  cin >> menu;
+  do {
+    cout << endl;
+    cout << string(50, '*');
+    cout << endl;
+    cout << "1. Add Inventory\n";
+    cout << "2. Delete Inventory\n";
+    cout << "3. Edit Inventory\n";
+    cout << "4. Display Inventory\n";
+    cout << "5. Quit Program\n\n";
 
-  switch (menu)
-  {
-    case 1: addInv();
-      break;
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    default: ;
-  }
+    cout << "Enter the number for your selection: ";
+    cin >> menu;
+
+    switch (menu)
+    {
+      case 1: addInv();
+        break;
+      case 2: delInv();
+        break;
+      case 3: editInv();
+        break;
+      case 4: showInv();
+        break;
+      case 5:
+      default: ;
+    }
+  } while(menu != 5);
 }
 
 void InvInq::addInv()
 {
-  cout << "Description: ";
-  cin >> invArray[1].itemDesc;
-  // cin >> invArray->itemDesc[1];
-  cout << invArray[1].itemDesc << endl;
+  cin.ignore();
+  cout << "\nDescription: ";
+  do {
+    getline(cin, invArray[itemCount].itemDesc);
+    if ((invArray[itemCount].itemDesc).length() > 22)
+      cout << "Description is too long. Enter 22 characters or less:\n";
+  } while(invArray[itemCount].itemDesc.length() > 22);
+
   cout << "Quantity: ";
-  cin >> invArray[1].itemQuan;
-  // cin >> invArray->itemQuan[1];
+  do {
+    cin >> invArray[itemCount].itemQuan;
+    if (invArray[itemCount].itemQuan < 0 || invArray[itemCount].itemQuan > 9999999999)
+      cout << "That doesn't sound like a proper quantity. Enter a proper amount: ";
+  } while(invArray[itemCount].itemQuan < 0 || invArray[itemCount].itemQuan > 9999999999);
+
   cout << "Cost: ";
-  cin >> invArray[1].itemCost;
-  // cin >> invArray->itemCost[1];
-  // get date entry
+  cin >> invArray[itemCount].itemCost;
+
+  getDate();
+}
+
+void InvInq::incInv()
+{
+  itemCount++;
+
+  int* tmpArr = nullptr;
+
+  tmpArr = new int[itemCount];
+
+  for (int i = 0; i < (itemCount - 1); i++)
+    tmpArr[i] = invArray[i];
+
+  delete [] invArray;
+
+  invArray = tmpArr;
+
+  tmpArr = nullptr;
+}
+
+void InvInq::delInv()
+{
+
+}
+
+void InvInq::editInv()
+{
+
+}
+
+void InvInq::showInv()
+{
+  cout << "\nDESCRIPTION             --    QUANTITY  --          COST --   ENTRY DATE\n";
+  //      "1234567890123456789012      1234567890      123456789.01      12/31/1983"
+  for (int i = 0; i < itemCount; i++)
+  {
+    cout << left << setw(22) << invArray[i].itemDesc << "      " << right << setw(10) << invArray[i].itemQuan << "      " << setw(12) << fixed << setprecision(2) << invArray[i].itemCost << "      " << setw(2) << invArray[i].itemDate[0] << "/" << setw(2) << invArray[i].itemDate[1] << "/" << invArray[i].itemDate[2] << endl;
+  }
 }
 
 void InvInq::getDate()
 {
   time_t now = time(0);
-  cout << now << endl;
   tm *dateTime = localtime(&now);
   int dtYear = (1900 + dateTime->tm_year);
   int dtMonth = (1 + dateTime->tm_mon);
   int dtDay = dateTime->tm_mday;
+  /*
   cout << "MONTH  DAY  YEAR" << endl;
   cout << dtMonth << dtDay << dtYear << endl;
+  */
+  invArray[itemCount].itemDate[0] = dtMonth;
+  invArray[itemCount].itemDate[1] = dtDay;
+  invArray[itemCount].itemDate[2] = dtYear;
 }
 
-void InvInq::incInventory()
+void InvInq::delArray()
 {
+
 }
