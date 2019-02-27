@@ -23,8 +23,11 @@ private:
   Inventory* invArray = nullptr;
   int itemCount, currInvItem;
   const int maxLength = 22;
+
 public:
+  // function prototypes
   void newArray();
+  void sayHi();
   void printMenu();
   void addInv();
   void incInv();
@@ -40,6 +43,7 @@ int main()
   InvInq hw3;
 
   hw3.newArray();
+  hw3.sayHi();
   hw3.printMenu();
 
   return 0;
@@ -53,14 +57,19 @@ void InvInq::newArray()
   invArray = new Inventory[0];
 }
 
+// program greeting
+void InvInq::sayHi()
+{
+  cout << "You wanted another inventory management program?\n";
+  cout << "WELL HERE IT IS. I HOPE THIS IS GOOD ENOUGH FOR YOU.\n";
+}
+
 void InvInq::printMenu()
 {
   int menu;
 
   do {
-    cout << endl;
-    cout << string(40, '*');
-    cout << endl;
+    cout << "\n\n" << string(40, '*') << "\n";
     // Specification C4 - Main Menu
     cout << "1. Add Inventory\n";
     cout << "2. Delete Inventory\n";
