@@ -37,6 +37,7 @@ public:
   void showInv();
   void getDate();
   void writeInv();
+  void delArray();
 };
 
 int main()
@@ -47,6 +48,7 @@ int main()
   hw3.sayHi();
   hw3.printMenu();
   hw3.writeInv();
+  hw3.delArray();
 
   return 0;
 }
@@ -141,16 +143,6 @@ void InvInq::addInv()
   // loop while less than 0 (negative quantity?) or over the imposed limit
   } while(invArray[currInvItem].itemQuan < 0 || invArray[currInvItem].itemQuan > 9999999999);
 
-/*
-  cout << "Cost (x.xx): ";
-  do {
-    cin >> invArray[currInvItem].itemCost;
-
-    if (invArray[currInvItem].itemCost < 0 || invArray[currInvItem].itemCost > 999999999.99)
-      cout << "Price should be more than zero, and less than one billion: ";
-  } while(invArray[currInvItem].itemCost < 0 || invArray[currInvItem].itemCost > 999999999.99);
-  */
-
   cout << "Cost, dollars: ";
   do {
     cin >> invArray[currInvItem].itemDollars;
@@ -182,8 +174,6 @@ void InvInq::addInv()
     invArray[currInvItem].itemCents -= 100;
     invArray[currInvItem].itemDollars += 1;
   }
-
-//  invArray[currInvItem].itemCost *= 2;
 
   getDate();
 }
@@ -318,19 +308,6 @@ void InvInq::editInv()
       if (invArray[currInvItem].itemQuan < 0 || invArray[currInvItem].itemQuan > 9999999999)
         cout << "That doesn't sound like a proper quantity. Enter a proper amount: ";
     } while(invArray[currInvItem].itemQuan < 0 || invArray[currInvItem].itemQuan > 9999999999);
-/*
-    cout << "Previous Cost, BEFORE MARKUP: $" << invArray[currInvItem].itemCost / 2 << ".\n";
-    cout << "Cost (x.xx): ";
-    do {
-      cin >> invArray[currInvItem].itemCost;
-
-      if (invArray[currInvItem].itemCost < 0 || invArray[currInvItem].itemCost > 999999999.99)
-        cout << "Price should be more than zero, and less than one billion: ";
-    } while(invArray[currInvItem].itemCost < 0 || invArray[currInvItem].itemCost > 999999999.99);
-
-    invArray[currInvItem].itemCost *= 2;
-  }
-  */
 
     cout << "Previous Cost, AFTER MARKUP: $" << invArray[currInvItem].itemDollars << "." << setw(2) << setfill('0') << invArray[currInvItem].itemCents << setfill(' ') << ".\n";
     cout << "New Cost, BEFORE MARKUP, $: ";
@@ -358,7 +335,6 @@ void InvInq::editInv()
     invArray[currInvItem].itemCents -= 100;
     invArray[currInvItem].itemDollars += 1;
   }
-
 }
 
 // Specification C3 - Display Option
@@ -396,4 +372,10 @@ void InvInq::writeInv()
   }
 
   invFile.close();
+}
+
+void InvInq::delArray()
+{
+  delete [] invArray;
+  invArray = nullptr;
 }
