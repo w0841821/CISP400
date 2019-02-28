@@ -11,6 +11,7 @@ struct Inventory
 {
   string itemDesc;
   double itemQuan;
+  //float itemCost;
   double itemDollars;
   int itemCents;
   int itemDate[3];
@@ -22,7 +23,7 @@ class InvInq
 private:
   Inventory* invArray = nullptr;
   int itemCount, currInvItem;
-  const int maxLength = 22;
+  const unsigned int maxLength = 22;
 
 public:
   // function prototypes
@@ -45,6 +46,7 @@ int main()
   hw3.newArray();
   hw3.sayHi();
   hw3.printMenu();
+  hw3.writeInv();
 
   return 0;
 }
@@ -53,6 +55,7 @@ void InvInq::newArray()
 {
   // number of inventoried items = 0
   itemCount = 0;
+
   // Specification C1 - Dynamic Array
   invArray = new Inventory[0];
 }
@@ -67,9 +70,12 @@ void InvInq::sayHi()
 void InvInq::printMenu()
 {
   int menu;
+  bool quit = false;
+  char quitCheck;
 
   do {
     cout << "\n\n" << string(40, '*') << "\n";
+
     // Specification C4 - Main Menu
     cout << "1. Add Inventory\n";
     cout << "2. Delete Inventory\n";
@@ -91,10 +97,13 @@ void InvInq::printMenu()
         break;
       case 4: showInv();
         break;
-      case 5:
+      case 5: cout << "Are you sure you'd like to quit? (y) to quit: ";
+      cin >> quitCheck;
+      if (toupper(quitCheck) == 'Y')
+        quit = true;
       default: ;
     }
-  } while(menu != 5);
+  } while(!quit);
 }
 
 // Specification C2 - Add Option
@@ -107,29 +116,50 @@ void InvInq::addInv()
   currInvItem = itemCount - 1;
 
   cin.ignore();
-  cout << "\nDescription: ";
 
+  cout << "\nDescription: ";
   do {
     getline(cin, invArray[currInvItem].itemDesc);
+
     // Specification A2 - Validate Inventory
-    if ((invArray[currInvItem].itemDesc).length() > maxLength)
-      cout << "Description is too long. Enter 22 characters or less:\n";
-  } while(invArray[currInvItem].itemDesc.length() > maxLength);
+    if (invArray[currInvItem].itemDesc.length() > maxLength)
+      cout << "Description is too long. Enter 22 characters or less: ";
+    if (invArray[currInvItem].itemDesc == "")
+      cout << "Oops, that's a blank Description! Enter Description: ";
+
+  // loop while we're over 22 characters, or if no description is entered
+  } while(invArray[currInvItem].itemDesc.length() > maxLength || invArray[currInvItem].itemDesc == "");
 
   cout << "Quantity: ";
   do {
     cin >> invArray[currInvItem].itemQuan;
+
     // allowing ten digits for formatting quantity, so: no more than 9,999,999,999
     if (invArray[currInvItem].itemQuan < 0 || invArray[currInvItem].itemQuan > 9999999999)
       cout << "That doesn't sound like a proper quantity. Enter a proper amount: ";
+
+  // loop while less than 0 (negative quantity?) or over the imposed limit
   } while(invArray[currInvItem].itemQuan < 0 || invArray[currInvItem].itemQuan > 9999999999);
+
+/*
+  cout << "Cost (x.xx): ";
+  do {
+    cin >> invArray[currInvItem].itemCost;
+
+    if (invArray[currInvItem].itemCost < 0 || invArray[currInvItem].itemCost > 999999999.99)
+      cout << "Price should be more than zero, and less than one billion: ";
+  } while(invArray[currInvItem].itemCost < 0 || invArray[currInvItem].itemCost > 999999999.99);
+  */
 
   cout << "Cost, dollars: ";
   do {
     cin >> invArray[currInvItem].itemDollars;
+
     // allowing nine digits for formatting dollars, so: no more than 999,999,999
     if (invArray[currInvItem].itemDollars < 0 || invArray[currInvItem].itemDollars > 999999999)
       cout << "Dollars should be at least 0 or less than one billion: ";
+
+  // same as with quantity
   } while(invArray[currInvItem].itemDollars < 0 || invArray[currInvItem].itemDollars > 999999999);
 
   cout << "Cost, cents: ";
@@ -137,7 +167,23 @@ void InvInq::addInv()
     cin >> invArray[currInvItem].itemCents;
     if (invArray[currInvItem].itemCents < 0 || invArray[currInvItem].itemCents > 99)
       cout << "Cents should be between 0 and 99: ";
+
+  // same as with dollars and quantity
   } while(invArray[currInvItem].itemCents < 0 || invArray[currInvItem].itemCents > 99);
+
+
+  // double the price for markup
+  invArray[currInvItem].itemCents *= 2;
+  invArray[currInvItem].itemDollars *= 2;
+
+  // if cents go over 99, we need to add a dollar
+  if (invArray[currInvItem].itemCents > 99)
+  {
+    invArray[currInvItem].itemCents -= 100;
+    invArray[currInvItem].itemDollars += 1;
+  }
+
+//  invArray[currInvItem].itemCost *= 2;
 
   getDate();
 }
@@ -173,10 +219,16 @@ void InvInq::delInv()
     cout << "\nEnter the Item # of the inventory item you would like to delete,\n";
     cout << "or enter 0 to return to the main menu: ";
     cin >> itemNum;
+
+    // exit the delete if 0 is entered
     if (itemNum == 0)
       break;
+
+    // can't delete an item if it doesn't exist!
     if (itemNum > itemCount)
       cout << "\nOops, we don't have that many items!";
+
+    // otherwise we have the right item to delete
     else
     {
       cout << "\nItem #" << itemNum << " is " << invArray[itemNum - 1].itemDesc << ".\n";
@@ -204,8 +256,10 @@ void InvInq::delInv()
     for (int i = 0; i < (itemCount + 1); i++)
     {
       if (i != deleteEle)
+      {
         delArr[j] = invArray[i];
         j++;
+      }
     }
 
     delete [] invArray;
@@ -244,30 +298,47 @@ void InvInq::editInv()
 
   if (correctItem)
   {
-    cout << "Old Description: " << invArray[itemNum - 1].itemDesc << ".\n";
+    currInvItem = itemNum - 1;
+
+    cout << "Old Description: " << invArray[currInvItem].itemDesc << ".\n";
     cout << "New Description: ";
     cin.ignore();
     do {
-      getline(cin, invArray[itemNum - 1].itemDesc);
-      if ((invArray[itemNum - 1].itemDesc).length() > maxLength)
+      getline(cin, invArray[currInvItem].itemDesc);
+      if (invArray[currInvItem].itemDesc.length() > maxLength)
         cout << "Description is too long. Enter 22 characters or less:\n";
-    } while(invArray[itemNum - 1].itemDesc.length() > maxLength);
+      if (invArray[currInvItem].itemDesc == "")
+        cout << "Oops, that's a blank Description! Enter Description: ";
+    } while(invArray[currInvItem].itemDesc.length() > maxLength || invArray[currInvItem].itemDesc == "");
 
-    cout << "Previous Quantity: " << invArray[itemNum - 1].itemQuan << ".\n";
+    cout << "Previous Quantity: " << invArray[currInvItem].itemQuan << ".\n";
     cout << "New Quantity: ";
     do {
-      cin >> invArray[itemNum - 1].itemQuan;
-      if (invArray[itemNum - 1].itemQuan < 0 || invArray[itemNum - 1].itemQuan > 9999999999)
+      cin >> invArray[currInvItem].itemQuan;
+      if (invArray[currInvItem].itemQuan < 0 || invArray[currInvItem].itemQuan > 9999999999)
         cout << "That doesn't sound like a proper quantity. Enter a proper amount: ";
-    } while(invArray[itemNum - 1].itemQuan < 0 || invArray[itemNum - 1].itemQuan > 9999999999);
-
-    cout << "Previous Cost: $" << invArray[itemNum - 1].itemDollars << "." << invArray[itemNum - 1].itemCents << ".\n";
-    cout << "New Cost, dollars: ";
+    } while(invArray[currInvItem].itemQuan < 0 || invArray[currInvItem].itemQuan > 9999999999);
+/*
+    cout << "Previous Cost, BEFORE MARKUP: $" << invArray[currInvItem].itemCost / 2 << ".\n";
+    cout << "Cost (x.xx): ";
     do {
-      cin >> invArray[itemNum - 1].itemDollars;
-      if (invArray[itemNum - 1].itemDollars < 0 || invArray[itemNum - 1].itemDollars > 999999999)
+      cin >> invArray[currInvItem].itemCost;
+
+      if (invArray[currInvItem].itemCost < 0 || invArray[currInvItem].itemCost > 999999999.99)
+        cout << "Price should be more than zero, and less than one billion: ";
+    } while(invArray[currInvItem].itemCost < 0 || invArray[currInvItem].itemCost > 999999999.99);
+
+    invArray[currInvItem].itemCost *= 2;
+  }
+  */
+
+    cout << "Previous Cost, AFTER MARKUP: $" << invArray[currInvItem].itemDollars << "." << setw(2) << setfill('0') << invArray[currInvItem].itemCents << setfill(' ') << ".\n";
+    cout << "New Cost, BEFORE MARKUP, $: ";
+    do {
+      cin >> invArray[currInvItem].itemDollars;
+      if (invArray[currInvItem].itemDollars < 0 || invArray[currInvItem].itemDollars > 999999999)
         cout << "Dollars should be at least 0 or less than one billion: ";
-    } while(invArray[itemNum - 1].itemDollars < 0 || invArray[itemNum - 1].itemDollars > 999999999);
+    } while(invArray[currInvItem].itemDollars < 0 || invArray[currInvItem].itemDollars > 999999999);
 
     cout << "New Cost, cents: ";
     do {
@@ -276,17 +347,26 @@ void InvInq::editInv()
         cout << "Cents should be between 0 and 99: ";
     } while(invArray[currInvItem].itemCents < 0 || invArray[currInvItem].itemCents > 99);
   }
+
+  // double the price for markup
+  invArray[currInvItem].itemCents *= 2;
+  invArray[currInvItem].itemDollars *= 2;
+
+  // if cents go over 99, we need to add a dollar
+  if (invArray[currInvItem].itemCents > 99)
+  {
+    invArray[currInvItem].itemCents -= 100;
+    invArray[currInvItem].itemDollars += 1;
+  }
+
 }
 
 // Specification C3 - Display Option
 void InvInq::showInv()
 {
   cout << "\nITEM #  DESCRIPTION                   QUANTITY              COST      ENTRY DATE\n";
-  //      "        1234567890123456789012      1234567890        123456789.01      12/31/1983"
   for (int i = 0; i < itemCount; i++)
-  {
-    cout << right << setw(6) << i + 1 << "  " << left << setw(22) << invArray[i].itemDesc << "      " << right << setw(10) << invArray[i].itemQuan << "      " << setw(9) << invArray[i].itemDollars << "." << setw(2) << invArray[i].itemCents << "      " << setw(2) << invArray[i].itemDate[0] << "/" << setw(2) << invArray[i].itemDate[1] << "/" << invArray[i].itemDate[2] << endl;
-  }
+    cout << right << setw(6) << i + 1 << "  " << left << setw(22) << invArray[i].itemDesc << "      " << right << setw(10) << invArray[i].itemQuan << "      " << setw(9) << invArray[i].itemDollars << "." << setw(2) << setfill('0') << invArray[i].itemCents << setfill(' ') << "      " << setw(2) << invArray[i].itemDate[0] << "/" << setw(2) << invArray[i].itemDate[1] << "/" << invArray[i].itemDate[2] << endl;
 }
 
 void InvInq::getDate()
@@ -312,6 +392,8 @@ void InvInq::writeInv()
 
   for (int i = 0; i < itemCount; i++)
   {
-    invFile << right << setw(6) << i + 1 << "  " << left << setw(22) << invArray[i].itemDesc << "      " << right << setw(10) << invArray[i].itemQuan << "      " << setw(9) << invArray[i].itemDollars << "." << setw(2) << invArray[i].itemCents << "      " << setw(2) << invArray[i].itemDate[0] << "/" << setw(2) << invArray[i].itemDate[1] << "/" << invArray[i].itemDate[2] << endl;
+    invFile << right << setw(6) << i + 1 << "  " << left << setw(22) << invArray[i].itemDesc << "      " << right << setw(10) << invArray[i].itemQuan << "      " << setw(9) << invArray[i].itemDollars << "." << setw(2) << setfill('0') << invArray[i].itemCents << setfill(' ') << "      " << setw(2) << invArray[i].itemDate[0] << "/" << setw(2) << invArray[i].itemDate[1] << "/" << invArray[i].itemDate[2] << endl;
   }
+
+  invFile.close();
 }
