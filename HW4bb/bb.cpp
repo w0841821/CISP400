@@ -13,11 +13,6 @@ Battleship 4
 
 • Show the results of each turn enemy map indicating where the computer fired on you (and your ships) and a friendly map showing where you fired (and sunk) computer ships.
 
-• The grids are 10 x 10 squares. Use letter, number designation - columns are letters, rows numbers.
-
-• Pre programed ship placement (i.e. you can hard code the ship
-locations) is allowable.
-
 • You can use the Standard Template Library.
 
 • Style guide elements apply: comments, layout, Program Greeting,
@@ -48,6 +43,9 @@ struct Player
   struct Ocean
   {
     string board;
+		struct result {
+
+		};
   } ocean[11][11];
 
 } player[2];
@@ -56,7 +54,7 @@ class Battleship
 {
 private:
   char normal[8] = {0x1b, '[', '0', ';', '3', '9', 'm', 0};
-  char blue[8] = {0x1b, '[', '1', ';', '9', '6', 'm', 0};
+  char blue[8] = {0x1b, '[', '1', ';', '3', '4', 'm', 0};
   char red[8] = {0x1b, '[', '1', ';', '3', '1', 'm', 0};
 public:
   void sayHi();
@@ -64,15 +62,17 @@ public:
   void buildBoard();
   void placeShips();
   void printBoard();
+	void hitEnter();
 };
 
 int main()
 {
   Battleship hw4;
 
-  hw4.sayHi();
   hw4.buildShips();
   hw4.buildBoard();
+	hw4.sayHi();
+
   hw4.placeShips();
   hw4.printBoard();
 
@@ -82,6 +82,23 @@ int main()
 void Battleship::sayHi()
 {
   cout << "Hi!\n\n";
+	cout << "A missed shot will be marked with \"" << blue << "O" << normal << "\".\n";
+	cout << "A hit will be marked with \"" << red << "X" << normal << "\".\n";
+	cout << "Open ocean is indicated with \"" << blue << "~" << normal << "\".\n\n";
+	cout << "Carriers have a size of 5 and are indicated with \"C\".\n";
+	cout << "Battleships have a size of 4 and are incidated with \"B\".\n";
+	cout << "Cruisers have a size of 3 and are indicated with \"Z\".\n";
+	cout << "Submarines have a size of 3 and are indicated with \"S\".\n";
+	cout << "Destroyers have a size of 2 and are indicated with \"D\".\n\n";
+
+	hitEnter();
+
+	cout << "You will see two maps: one of your ships with the results of shots from the computer,\n";
+	cout << "and the computer's map, with the results of your shots.\n\n";
+
+	printBoard();
+
+	hitEnter();
 }
 
 void Battleship::buildShips()
@@ -181,6 +198,9 @@ void Battleship::buildBoard()
 
 void Battleship::placeShips()
 {
+	// place comp ships
+
+
   player[USER].ocean[1][1].board = "C";
   player[USER].ocean[2][1].board = "C";
   player[USER].ocean[3][1].board = "C";
@@ -190,7 +210,7 @@ void Battleship::placeShips()
   player[USER].ocean[8][1].board = "B";
   player[USER].ocean[9][1].board = "B";
   player[USER].ocean[10][1].board = "B";
-  player[USER].ocean[11][1].board = "B";
+  player[USER].ocean[7][1].board = "B";
 
   player[USER].ocean[3][3].board = "Z";
   player[USER].ocean[3][4].board = "Z";
@@ -208,7 +228,7 @@ void Battleship::printBoard()
 {
 //                    10 ~ ~ ~ D ~ ~ G ~ ~ ~          10 ~ ~ ~ D ~ ~ G ~ ~ ~
   cout << "                   YOUR MAP                       COMPUTER MAP\n";
-
+/*
   player[USER].ocean[3][6].board = "O";
   player[USER].ocean[3][7].board = "O";
   player[USER].ocean[3][8].board = "O";
@@ -218,7 +238,7 @@ void Battleship::printBoard()
   player[COMP].ocean[7][6].board = "~";
   player[COMP].ocean[8][6].board = "~";
   player[COMP].ocean[9][6].board = "~";
-
+*/
 
   // loop the rows
   for (int i = 0; i < 11; i++)
@@ -233,7 +253,7 @@ void Battleship::printBoard()
         cout << blue << player[USER].ocean[i][j].board << normal;
 
       // if user has been hit
-      else if (player[USER].ocean[i][j].board == "O")
+      else if (player[USER].ocean[i][j].board == "X")
         cout << red << player[USER].ocean[i][j].board << normal;
       else
         cout << player[USER].ocean[i][j].board;
@@ -255,8 +275,14 @@ void Battleship::printBoard()
         cout << " ";
     }
 
-    cout << "\n";
+    cout << "\n\n";
   }
+}
+
+void Battleship::hitEnter()
+{
+  cout << "Press Enter to continue.\n";
+  cin.ignore();
 }
 
 /*
