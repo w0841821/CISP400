@@ -35,17 +35,15 @@ struct Player
 
   struct Ships
   {
-    string shipType;
+    string shipType, shipMark;
     int shipSize;
-    bool shipSunk;
+    bool shipSunk, placed;
   } ship[5];
 
   struct Ocean
   {
     string board;
-		struct result {
-
-		};
+		bool taken;
   } ocean[11][11];
 
 } player[2];
@@ -68,6 +66,8 @@ public:
 int main()
 {
   Battleship hw4;
+
+  srand(time(0));
 
   hw4.buildShips();
   hw4.buildBoard();
@@ -105,37 +105,57 @@ void Battleship::buildShips()
 {
   player[USER].name = "User";
   player[USER].ship[CARRIER].shipType = "Carrier";
-  player[USER].ship[CARRIER].shipSize = 5,
-  player[USER].ship[CARRIER].shipSunk = false,
-  player[USER].ship[BATTLESHIP].shipType = "Battleship",
-  player[USER].ship[BATTLESHIP].shipSize = 4,
-  player[USER].ship[BATTLESHIP].shipSunk = false,
-  player[USER].ship[CRUISER].shipType = "Cruiser",
-  player[USER].ship[CRUISER].shipSize = 3,
-  player[USER].ship[CRUISER].shipSunk = false,
-  player[USER].ship[SUBMARINE].shipType = "Submarine",
-  player[USER].ship[SUBMARINE].shipSize = 3,
-  player[USER].ship[SUBMARINE].shipSunk = false,
-  player[USER].ship[DESTROYER].shipType = "Destroyer",
+  player[USER].ship[CARRIER].shipMark = "C";
+  player[USER].ship[CARRIER].shipSize = 5;
+  player[USER].ship[CARRIER].shipSunk = false;
+  player[USER].ship[CARRIER].placed = false;
+  player[USER].ship[BATTLESHIP].shipType = "Battleship";
+  player[USER].ship[BATTLESHIP].shipMark = "B";
+  player[USER].ship[BATTLESHIP].shipSize = 4;
+  player[USER].ship[BATTLESHIP].shipSunk = false;
+  player[USER].ship[BATTLESHIP].placed = false;
+  player[USER].ship[CRUISER].shipType = "Cruiser";
+  player[USER].ship[CRUISER].shipMark = "Z";
+  player[USER].ship[CRUISER].shipSize = 3;
+  player[USER].ship[CRUISER].shipSunk = false;
+  player[USER].ship[CRUISER].placed = false;
+  player[USER].ship[SUBMARINE].shipType = "Submarine";
+  player[USER].ship[SUBMARINE].shipMark = "S";
+  player[USER].ship[SUBMARINE].shipSize = 3;
+  player[USER].ship[SUBMARINE].shipSunk = false;
+  player[USER].ship[SUBMARINE].placed = false;
+  player[USER].ship[DESTROYER].shipType = "Destroyer";
+  player[USER].ship[DESTROYER].shipMark = "D";
   player[USER].ship[DESTROYER].shipSize = 2;
   player[USER].ship[DESTROYER].shipSunk = false;
+  player[USER].ship[DESTROYER].placed = false;
 
   player[COMP].name = "Computer";
   player[COMP].ship[CARRIER].shipType = "Carrier";
-  player[COMP].ship[CARRIER].shipSize = 5,
-  player[COMP].ship[CARRIER].shipSunk = false,
-  player[COMP].ship[BATTLESHIP].shipType = "Battleship",
-  player[COMP].ship[BATTLESHIP].shipSize = 4,
-  player[COMP].ship[BATTLESHIP].shipSunk = false,
-  player[COMP].ship[CRUISER].shipType = "Cruiser",
-  player[COMP].ship[CRUISER].shipSize = 3,
-  player[COMP].ship[CRUISER].shipSunk = false,
-  player[COMP].ship[SUBMARINE].shipType = "Submarine",
-  player[COMP].ship[SUBMARINE].shipSize = 3,
-  player[COMP].ship[SUBMARINE].shipSunk = false,
-  player[COMP].ship[DESTROYER].shipType = "Destroyer",
+  player[COMP].ship[CARRIER].shipMark = "C";
+  player[COMP].ship[CARRIER].shipSize = 5;
+  player[COMP].ship[CARRIER].shipSunk = false;
+  player[COMP].ship[CARRIER].placed = false;
+  player[COMP].ship[BATTLESHIP].shipType = "Battleship";
+  player[COMP].ship[BATTLESHIP].shipMark = "B";
+  player[COMP].ship[BATTLESHIP].shipSize = 4;
+  player[COMP].ship[BATTLESHIP].shipSunk = false;
+  player[COMP].ship[BATTLESHIP].placed = false;
+  player[COMP].ship[CRUISER].shipType = "Cruiser";
+  player[COMP].ship[CRUISER].shipMark = "Z";
+  player[COMP].ship[CRUISER].shipSize = 3;
+  player[COMP].ship[CRUISER].shipSunk = false;
+  player[COMP].ship[CRUISER].placed = false;
+  player[COMP].ship[SUBMARINE].shipType = "Submarine";
+  player[COMP].ship[SUBMARINE].shipMark = "S";
+  player[COMP].ship[SUBMARINE].shipSize = 3;
+  player[COMP].ship[SUBMARINE].shipSunk = false;
+  player[COMP].ship[SUBMARINE].placed = false;
+  player[COMP].ship[DESTROYER].shipType = "Destroyer";
+  player[COMP].ship[DESTROYER].shipMark = "D";
   player[COMP].ship[DESTROYER].shipSize = 2;
   player[COMP].ship[DESTROYER].shipSunk = false;
+  player[COMP].ship[DESTROYER].placed = false;
 }
 
 void Battleship::buildBoard()
@@ -190,17 +210,118 @@ void Battleship::buildBoard()
     {
       // fill the user board with "ocean"
       player[USER].ocean[i][j].board = "~";
+      player[USER].ocean[i][j].taken = false;
 
       // fill the comp board with filler space
       player[COMP].ocean[i][j].board = ".";
+      player[COMP].ocean[i][j].taken = false;
     }
 }
 
 void Battleship::placeShips()
 {
 	// place comp ships
+  bool vertical, valid;
+  //bool up = false;
+  //bool left = false;
+  int randX, randY, lowX, highX, lowY, highY;
 
+  for (int i = 0; i < 5; i++) {
+    do {
+      valid = true;
+      vertical = (rand() % 2);
+      do {
+        randX = (rand() % 10) + 1;
+        randY = (rand() % 10) + 1;
+      } while(player[COMP].ocean[randY][randX].taken);
 
+      // if the ship will be placed vertically...
+      if (vertical) {
+
+        // if the ship would overrun the board, place it upward instead of downward
+        if (randY + (player[COMP].ship[i].shipSize - 1) > 10) {
+          //up = true;
+          lowY = randY - (player[COMP].ship[i].shipSize - 1);
+          highY = randY;
+        }
+        else {
+          lowY = randY;
+          highY = randY + (player[COMP].ship[i].shipSize - 1);
+        }
+      }
+
+      // ..or if the ship will be placed horizontally
+      else {
+        if (randX + (player[COMP].ship[i].shipSize - 1) > 10) {
+          //left = true;
+          lowX = randX - (player[COMP].ship[i].shipSize - 1);
+          highX = randX;
+        }
+        else {
+          lowX = randX;
+          highX = randX + (player[COMP].ship[i].shipSize - 1);
+        }
+      }
+
+      // check that the spaces for the ship aren't taken
+      for (int j = 0; j < player[COMP].ship[i].shipSize; j++) {
+
+      // if ship placement is vertical...
+        if (vertical) {
+          for (int k = lowY; k <= highY; k++) {
+            if (player[COMP].ocean[k][randX].taken) {
+              valid = false;
+              break;
+            }
+          }
+        }
+
+      // ...or if ship placement is horizontal
+        else {
+          for (int k = lowX; k <= highX; k++) {
+            if (player[COMP].ocean[randY][k].taken) {
+              valid = false;
+              break;
+            }
+          }
+        }
+      }
+
+  } while(!valid);
+
+    // ship is able to be placed
+    if (vertical) {
+      for (int k = lowY; k <= highY; k++) {
+        player[COMP].ocean[k][randX].taken = true;
+        player[COMP].ocean[k][randX].board = player[COMP].ship[i].shipMark;
+      }
+    }
+    else {
+      for (int k = lowX; k <= highX; k++) {
+        player[COMP].ocean[randY][k].taken = true;
+        player[COMP].ocean[randY][k].board = player[COMP].ship[i].shipMark;
+      }
+    }
+//    player[COMP].ship[i].placed = true;
+  }
+  /*
+  do {
+  } while(!player[COMP].ship[CARRIER].placed);
+
+  do {
+  } while(!player[COMP].ship[BATTLESHIP].placed);
+
+  do {
+  } while(!player[COMP].ship[CRUISER].placed);
+
+  do {
+  } while(!player[COMP].ship[SUBMARINE].placed);
+
+  do {
+  } while(!player[COMP].ship[DESTROYER].placed);
+  */
+
+  // place user ships
   player[USER].ocean[1][1].board = "C";
   player[USER].ocean[2][1].board = "C";
   player[USER].ocean[3][1].board = "C";
@@ -267,7 +388,7 @@ void Battleship::printBoard()
     {
       if (player[COMP].ocean[i][j].board == "~")
         cout << blue << player[COMP].ocean[i][j].board << normal;
-      else if (player[COMP].ocean[i][j].board == "O")
+      else if (player[COMP].ocean[i][j].board == "X")
           cout << red << player[COMP].ocean[i][j].board << normal;
       else
         cout << player[COMP].ocean[i][j].board;
@@ -275,8 +396,10 @@ void Battleship::printBoard()
         cout << " ";
     }
 
-    cout << "\n\n";
+    cout << "\n";
   }
+
+  cout << "\n";
 }
 
 void Battleship::hitEnter()
