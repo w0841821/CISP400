@@ -1,24 +1,4 @@
 /*
-Program the game of battleship against the computer. Each side has 2 grids. The first grid contains the location of the player’s ships. The second grid contains the location of the player’s shots and the outcome of the shot (hit or miss). The objective is to hit and sink all 5 enemy ships before they do the same to you. Each side receives ships listed in figure 1.
-
-   Carrier 5
-Battleship 4
-   Cruiser 3
- Submarine 3
- Destroyer 2
-
-• Show the results of each turn enemy map indicating where the computer fired on you (and your ships) and a friendly map showing where you fired (and sunk) computer ships.
-
-• You can use the Standard Template Library.
-
-• Style guide elements apply: comments, layout, Program Greeting,
-Source File Header, and variables etc. etc.
-
-2. // Specification C2 - Prohibit AI wasted shots
-Don’t allow the computer to fire an squares it’s already fired on.
-3. // Specification C3 - Secret Option
-Show the battlemaps from the computer’s perspective when a secret key is pressed. Extremely useful for debugging the program.
-
 "B" Specification Bundle.
 1. // Specification B1 - Validate Input
 Only allow valid map squares to be targeted.
@@ -28,19 +8,11 @@ Record the battle in a time-stamped log file to disk. The timestamp
 should contain the run date and the time an activity occurred. Call
 the output file "log.txt".
 
-
-"A" Specification Bundle.
-1. // Specification A1 - Adv Input Validation
-Only allow the human to fire on squares not already fired upon.
-
 2. // Specification A2 - MultiFire Game
 This is a game option. Allow each side to fire once for each ship still afloat. Allow players to activate this option at the start of the game.
 
 3. // Specification A3 - Cruise Missiles
-A modern update to the game. Each side fires as the original game, but instead of cannon shells, each side shoots cruise mis-
-siles. Each ship has a chance (80%) to shoot down incoming missiles (and report to you about it). Ships can only shoot down mis-
-siles targeted at their ship (i.e. if they don’t shoot it down it will hit their ship). Similar to A2, this is an option you can set at the
-start of the game, OR ,
+A modern update to the game. Each side fires as the original game, but instead of cannon shells, each side shoots cruise missiles. Each ship has a chance (80%) to shoot down incoming missiles (and report to you about it). Ships can only shoot down missiles targeted at their ship (i.e. if they don’t shoot it down it will hit their ship). Similar to A2, this is an option you can set at the start of the game, OR ,
 
 4. // Specification A3 - Random Human Start
 Allow the human player to place their ships. As with B2, make
@@ -53,6 +25,7 @@ sure the placement is allowable.
 // 03-24-2019
 
 #include <iostream>
+#include <thread>
 using namespace std;
 
 enum Ships_Enum {CARRIER, BATTLESHIP, CRUISER, SUBMARINE, DESTROYER};
@@ -62,6 +35,7 @@ enum Player_Enum {USER, COMP};
 struct Player
 {
   string name;
+  int shipCount;
 
   struct Ships
   {
@@ -87,19 +61,22 @@ private:
   char normal[8] = {0x1b, '[', '0', ';', '3', '9', 'm', 0};
   char blue[8] = {0x1b, '[', '1', ';', '3', '4', 'm', 0};
   char red[8] = {0x1b, '[', '1', ';', '3', '1', 'm', 0};
-  char col;
-  int row;
-  bool showHidden = false;
+  char colChar;
+  int row, col, strLen;
+  bool showHidden = false, gameOver = false, multifire;
+  string coords;
 public:
   void sayHi();
   void buildShips();
   void buildBoard();
   void placeShips();
   void printBoard();
+  void gameMode();
   void playGame();
   bool coinToss();
   void getShot();
-  void fireShot();
+  void compShot();
+  void convertCoords();
 	void hitEnter();
 };
 
@@ -114,6 +91,7 @@ int main()
 	hw4.sayHi();
 
   hw4.placeShips();
+  hw4.gameMode();
   hw4.playGame();
 
   return 0;
@@ -139,11 +117,15 @@ void Battleship::sayHi()
 	printBoard();
 
 	hitEnter();
+
+  system("clear");
 }
 
 void Battleship::buildShips()
 {
   player[USER].name = "User";
+
+  player[USER].shipCount = 5;
 
   player[USER].ship[CARRIER].shipType = "Carrier";
   player[USER].ship[CARRIER].shipMark = "C";
@@ -176,6 +158,8 @@ void Battleship::buildShips()
   // player[USER].ship[DESTROYER].placed = false;
 
   player[COMP].name = "Computer";
+
+  player[COMP].shipCount = 5;
 
   player[COMP].ship[CARRIER].shipType = "Carrier";
   player[COMP].ship[CARRIER].shipMark = "C";
@@ -296,113 +280,135 @@ void Battleship::buildBoard()
 
 void Battleship::placeShips()
 {
-	// place comp ships
   bool vertical, valid;
-  //bool up = false;
-  //bool left = false;
-  int randX, randY, lowX, highX, lowY, highY;
+  int lowX, highX, lowY, highY;
+  char vert;
 
-  // Specification B3 - Random Start
-  for (int i = 0; i < 5; i++) {
-    do {
-      valid = true;
-      vertical = (rand() % 2);
+  // for each player...
+  for (int i = 0; i < 2; i++) {
+    if (i == 0) {
+      cout << "When placing ships vertically, the ship will be placed downward from that point\n";
+      cout << "otherwise they will be placed to the right from that point.\n";
+      cout << "Directions will be flipped if the ship would run off the board.\n\n";
+    }
+    // place all their ships
+    for (int j = 0; j < 5; j++) {
       do {
-        randX = (rand() % 10) + 1;
-        randY = (rand() % 10) + 1;
-      } while(player[COMP].ocean[randY][randX].taken);
+        valid = true;
+        // player ships
+        if (i == 0) {
+          printBoard();
 
-      // if the ship will be placed vertically...
-      if (vertical) {
+          cout << "Where would you like to place your " << player[USER].ship[j].shipType << "?" << endl;
 
-        // if the ship would overrun the board, place it upward instead of downward
-        if (randY + (player[COMP].ship[i].shipSize - 1) > 10) {
-          lowY = randY - (player[COMP].ship[i].shipSize - 1);
-          highY = randY;
+          convertCoords();
+
+          if (player[USER].ocean[row][col].taken) {
+            cout << "The ship can't be placed here!\n\n";
+            valid = false;
+            break;
+          }
+
+          cout << "Would you like your ship placed vertically? (y, or any other key for no)\n";
+          cin >> vert;
+          cin.ignore();
+          cout << endl;
+
+          if (toupper(vert) == 'Y')
+            vertical = true;
+          else
+            vertical = false;
         }
+
+        // computer ships
         else {
-          lowY = randY;
-          highY = randY + (player[COMP].ship[i].shipSize - 1);
+          vertical = (rand() % 2);
+          do {
+            col = (rand() % 10) + 1;
+            row = (rand() % 10) + 1;
+          } while(player[COMP].ocean[row][col].taken);
         }
-      }
 
-      // ..or if the ship will be placed horizontally
-      else {
-        if (randX + (player[COMP].ship[i].shipSize - 1) > 10) {
-          //left = true;
-          lowX = randX - (player[COMP].ship[i].shipSize - 1);
-          highX = randX;
-        }
-        else {
-          lowX = randX;
-          highX = randX + (player[COMP].ship[i].shipSize - 1);
-        }
-      }
-
-      // check that the spaces for the ship aren't taken
-      for (int j = 0; j < player[COMP].ship[i].shipSize; j++) {
-
-      // if ship placement is vertical...
         if (vertical) {
-          for (int k = lowY; k <= highY; k++) {
-            if (player[COMP].ocean[k][randX].taken) {
-              valid = false;
-              break;
-            }
+
+          // if the ship would overrun the board, place it upward instead of downward
+          if (row + (player[i].ship[j].shipSize - 1) > 10) {
+            lowY = row - (player[i].ship[j].shipSize - 1);
+            highY = row;
+          }
+          else {
+            lowY = row;
+            highY = row + (player[i].ship[j].shipSize - 1);
           }
         }
 
-      // ...or if ship placement is horizontal
+        // ..or if the ship will be placed horizontally
         else {
-          for (int k = lowX; k <= highX; k++) {
-            if (player[COMP].ocean[randY][k].taken) {
-              valid = false;
-              break;
+          if (col + (player[i].ship[j].shipSize - 1) > 10) {
+            lowX = col - (player[i].ship[j].shipSize - 1);
+            highX = col;
+          }
+          else {
+            lowX = col;
+            highX = col + (player[i].ship[j].shipSize - 1);
+          }
+        }
+
+        // check if each of the cells are taken
+        for (int k = 0; k < player[i].ship[j].shipSize; k++) {
+          if (vertical) {
+            for (int l = lowY; l <= highY; l++) {
+              if (player[i].ocean[l][col].taken) {
+                if (i == 0)
+                  cout << "The ship can't be placed here!\n\n";
+                valid = false;
+                break;
+              }
+            }
+          }
+          else {
+            for (int l = lowX; l <= highX; l++) {
+              if (player[i].ocean[row][l].taken) {
+                if (i == 0)
+                  cout << "The ship can't be placed here!\n\n";
+                valid = false;
+                break;
+              }
             }
           }
         }
+      } while(!valid);
+
+      // ship is able to be placed
+      if (vertical) {
+        for (int m = lowY; m <= highY; m++) {
+          player[i].ocean[m][col].taken = true;
+          if (i == 0)
+            player[i].ocean[m][col].board = player[i].ship[j].shipMark;
+          else
+            player[i].ocean[m][col].hidden = player[i].ship[j].shipMark;
+        }
       }
-    } while(!valid);
-
-    // ship is able to be placed
-    if (vertical) {
-      for (int k = lowY; k <= highY; k++) {
-        player[COMP].ocean[k][randX].taken = true;
-        player[COMP].ocean[k][randX].hidden = player[COMP].ship[i].shipMark;
-      //  player[COMP].ocean[k][randX].board = player[COMP].ship[i].shipMark;
+      else {
+        for (int m = lowX; m <= highX; m++) {
+          player[i].ocean[row][m].taken = true;
+          if (i == 0)
+            player[i].ocean[row][m].board = player[i].ship[j].shipMark;
+          else
+            player[i].ocean[row][m].hidden = player[i].ship[j].shipMark;
+        }
       }
-    }
-    else {
-      for (int k = lowX; k <= highX; k++) {
-        player[COMP].ocean[randY][k].taken = true;
-        player[COMP].ocean[randY][k].hidden = player[COMP].ship[i].shipMark;
-      }
-    }
-  }
 
 
-  // place user ships
-  player[USER].ocean[1][1].board = "C";
-  player[USER].ocean[2][1].board = "C";
-  player[USER].ocean[3][1].board = "C";
-  player[USER].ocean[4][1].board = "C";
-  player[USER].ocean[5][1].board = "C";
 
-  player[USER].ocean[8][1].board = "B";
-  player[USER].ocean[9][1].board = "B";
-  player[USER].ocean[10][1].board = "B";
-  player[USER].ocean[7][1].board = "B";
 
-  player[USER].ocean[3][3].board = "Z";
-  player[USER].ocean[3][4].board = "Z";
-  player[USER].ocean[3][5].board = "Z";
 
-  player[USER].ocean[5][7].board = "S";
-  player[USER].ocean[5][8].board = "S";
-  player[USER].ocean[5][9].board = "S";
+    } // end of ship
+  } // end of player
 
-  player[USER].ocean[6][4].board = "D";
-  player[USER].ocean[7][4].board = "D";
+  cout << "Are you ready to sink some ships?\n";
+  hitEnter();
+  system("clear");
 }
 
 void Battleship::printBoard()
@@ -423,6 +429,10 @@ void Battleship::printBoard()
       // if user has been hit
       else if (player[USER].ocean[i][j].board == "X")
         cout << red << player[USER].ocean[i][j].board << normal;
+
+      // if a shot splashes the ocean
+      else if (player[USER].ocean[i][j].board == "O")
+        cout << blue << player[USER].ocean[i][j].board << normal;
       else
         cout << player[USER].ocean[i][j].board;
       if (j != 10)
@@ -437,6 +447,8 @@ void Battleship::printBoard()
           cout << blue << player[COMP].ocean[i][j].hidden << normal;
         else if (player[COMP].ocean[i][j].hidden == "X")
           cout << red << player[COMP].ocean[i][j].hidden << normal;
+        else if (player[COMP].ocean[i][j].hidden == "O")
+          cout << blue << player[COMP].ocean[i][j].hidden << normal;
         else
           cout << player[COMP].ocean[i][j].hidden;
         if (j != 10)
@@ -448,7 +460,9 @@ void Battleship::printBoard()
         if (player[COMP].ocean[i][j].board == "≈")
           cout << blue << player[COMP].ocean[i][j].board << normal;
         else if (player[COMP].ocean[i][j].board == "X")
-            cout << red << player[COMP].ocean[i][j].board << normal;
+          cout << red << player[COMP].ocean[i][j].board << normal;
+        else if (player[COMP].ocean[i][j].board == "O")
+          cout << blue << player[COMP].ocean[i][j].board << normal;
         else
           cout << player[COMP].ocean[i][j].board;
         if (j != 10)
@@ -456,46 +470,68 @@ void Battleship::printBoard()
       }
     }
 
-    cout << "\n";
+    cout << endl;
   }
 
-  cout << "\n";
+  cout << endl;
+}
+
+void Battleship::gameMode()
+{
+  cout << "You have the option to...\n";
+  cout << "1. Play a regular game or...\n";
+  cout << "2. Have the ability to fire once for each enemy ship still afloat.\n";
+  cout << "Which do you choose?\n";
+  cin >> menu;
+  switch (menu) {
+    case 1: multifire = false;
+      break;
+    case 2: multifire = true;
+      break;
+    default: cout << "Oops, not a valid option.\n";
+  }
 }
 
 void Battleship::playGame()
 {
-  bool userTurn, gameOver, quit;
+  bool userTurn;//, quit;
 
   // main game loop
+  userTurn = coinToss();
+  showHidden = false;
+  gameOver = false;
   do {
-    gameOver = false;
-    quit = false;
-    showHidden = false;
-    userTurn = coinToss();
-
-    do {
-      // if it's the user's turn...
-      if (userTurn) {
+    //quit = false;
+    //    do {
+    // if it's the user's turn...
+    if (userTurn) {
         userTurn = false;
         cout << "IT IS YOUR TURN!\n\n";
-        // print the game board...
-
 
         // ...ask for coordinates...
         getShot();
-        // fireShot();
+        if (gameOver) {
+          cout << "Congratulations, you sank their fleet!\n\n";
+          break;
+        }
+        printBoard();
+        hitEnter();
       }
       else {
         userTurn = true;
-        cout << "IT IS THE COMPUTER'S MOVE\n\n";
-        printBoard();
-
+        cout << "IT IS THE COMPUTER'S MOVE\n";
+        compShot();
+        if (gameOver) {
+          cout << "The computer sank your fleet.\n\n";
+          break;
+        }
+        hitEnter();
       }
+    } while(!gameOver);// || !quit);
 
-    } while(!gameOver || !quit);
 
 
-  } while(!quit);
+  //} while(!quit);
 }
 
 bool Battleship::coinToss()
@@ -507,110 +543,158 @@ bool Battleship::coinToss()
 void Battleship::getShot()
 {
   bool turnOver;
-  string coords;
-  int count;
-  int x, y;
+//  int count;
+  // int x, y;
 
   do {
     turnOver = false;
-    col = ' ';
-    row = 0;
-    count = 1;
 
     printBoard();
+    showHidden = false;
 
     cout << "Where would you like to fire? (ex: A10)\n";
-    cin >> coords;
 
-    if (coords == "x0" || coords == "X0") {
+    convertCoords();
+
+    if (colChar == 'X' && row == 0) {
+      // Specification C3 - Secret Option
       showHidden = true;
-      cout << "Cheater cheater!!\n\n";
-      printBoard();
-      showHidden = false;
-    //  turnOver = false;
-      break;
+      cout << "\nCheater cheater!!\n\n";
+    }
+    else if (strLen == 0 || strLen > 3) {
+      cout << "\nDoesn't seem like proper coordinates.\n";
+    }
+    else if (coords[0] < 65 || (coords[0] > 74 && coords[0] < 97) || coords[0] > 106) {
+      cout << "\nI don't think we have that column on the board!\n";
+    }
+    else if (row > 10) {
+      cout << "\nWe don't have that many rows on the board!\n";
     }
     else {
-      int strLen = coords.length();
-
-      if (strLen == 0 || strLen > 3) {
-        cout << "Doesn't seem like proper coordinates.\n";
-      //  turnOver = false;
-        break;
-      }
-
-      // cols = letters
-      if (coords[0] < 65 || (coords[0] > 74 && coords[0] < 97) || coords[0] > 106) {
-        cout << "I don't think we have that column on the board!\n";
-      //  turnOver = false;
-        break;
-      }
-
-      for (int i = (strLen - 1); i >= 1; i--) {
-        row += ((coords[i] - 48) * count);
-        count *= 10;
-      }
-
-      if (row > 10) {
-        cout << "We don't have that many rows on the board!\n";
-      //  turnOver = false;
-        break;
-      }
-
-      col = toupper(coords[0]);
-      x = col - 64;
-      y = row;
-
-      cout << "Target acquired! " << x << y << "\n";
-      hitEnter();
-
       // if we have targeted the coordinates before...
-      if (player[COMP].ocean[y][x].targeted) {
-        cout << "You've already fired at those coordinates!\n";
-      //  turnOver = false;
-        break;
-      }
+      // Specification A1 - Adv Input Validation
+      if (player[COMP].ocean[row][col].targeted)
+        cout << "\nYou've already fired at those coordinates!\n\n";
 
-      // ...or if we haven't
+      // ...or if we haven't targeted
       else {
         turnOver = true;
         // mark the coords as targeted
-        player[COMP].ocean[y][x].targeted = true;
+        player[COMP].ocean[row][col].targeted = true;
 
         // if there is a ship present...
-        if (player[COMP].ocean[y][x].taken) {
-          cout << red << "You hit an enemy ship!" << normal << "\n\n";
-          player[COMP].ocean[y][x].board = "X";
-          player[COMP].ocean[y][x].hidden = "X";
+        if (player[COMP].ocean[row][col].taken) {
+          cout << red << "\nYou hit an enemy ship!" << normal << "\n\n";
+          if (player[COMP].ocean[row][col].hidden == "C") {
+            player[COMP].ship[CARRIER].shipSize -= 1;
+            if (player[COMP].ship[CARRIER].shipSize == 0) {
+              player[COMP].ship[CARRIER].shipSunk = true;
+              player[COMP].shipCount -= 1;
+              cout << red << "...and you sank their Carrier!" << normal << "\n\n";
+            }
+          }
+          else if (player[COMP].ocean[row][col].hidden == "B") {
+            player[COMP].ship[BATTLESHIP].shipSize -= 1;
+            if (player[COMP].ship[BATTLESHIP].shipSize == 0) {
+              player[COMP].ship[BATTLESHIP].shipSunk = true;
+              player[COMP].shipCount -= 1;
+              cout << red << "...and you sank their Battleship!" << normal << "\n\n";
+            }
+          }
+          else if (player[COMP].ocean[row][col].hidden == "Z") {
+            player[COMP].ship[CRUISER].shipSize -= 1;
+            if (player[COMP].ship[CRUISER].shipSize == 0) {
+              player[COMP].ship[CRUISER].shipSunk = true;
+              player[COMP].shipCount -= 1;
+              cout << red << "...and you sank their Cruiser!" << normal << "\n\n";
+            }
+          }
+          else if (player[COMP].ocean[row][col].hidden == "S") {
+            player[COMP].ship[SUBMARINE].shipSize -= 1;
+            if (player[COMP].ship[SUBMARINE].shipSize == 0) {
+              player[COMP].ship[SUBMARINE].shipSunk = true;
+              player[COMP].shipCount -= 1;
+              cout << red << "...and you sank their Submarine!" << normal << "\n\n";
+            }
+          }
+          else {
+            player[COMP].ship[DESTROYER].shipSize -= 1;
+            if (player[COMP].ship[DESTROYER].shipSize == 0) {
+              player[COMP].ship[DESTROYER].shipSunk = true;
+              player[COMP].shipCount -= 1;
+              cout << red << "...and you sank their Destroyer!" << normal << "\n\n";
+            }
+          }
 
-          // reduce ship size...
+          player[COMP].ocean[row][col].board = "X";
+          player[COMP].ocean[row][col].hidden = "X";
+          if (player[COMP].shipCount == 0)
+            gameOver = true;
         }
 
         // ...or not
         else {
-          cout << blue << "Miss! You hit open ocean!" << normal << "\n\n";
-          player[COMP].ocean[y][x].board = "O";
-          player[COMP].ocean[y][x].hidden = "O";
+          cout << blue << "\nMiss! You hit open ocean!" << normal << "\n\n";
+          player[COMP].ocean[row][col].board = "O";
+          player[COMP].ocean[row][col].hidden = "O";
         }
       }
     }
-
-
   } while(!turnOver);
-
-
-//  fireShot();
 }
 
-void Battleship::fireShot()
+void Battleship::compShot()
 {
-/*  if (userTurn) {
+  bool goodCoords = false;
+  colChar = ' ';
 
+  do {
+    col = (rand() % 10) + 1;
+    row = (rand() % 10) + 1;
 
+    // Specification C2 - Prohibit AI wasted shots
+    if (player[USER].ocean[row][col].targeted == false)
+      goodCoords = true;
+  } while(!goodCoords);
+
+  colChar = col + 64;
+
+  player[USER].ocean[row][col].targeted = true;
+
+  cout << "\nThe computer aims at " << colChar << row << "\n";
+  for (int i = 1; i <= 3; i++) {
+    cout << string(i, '.') << "\n";
+    this_thread::sleep_for(500ms);
+  }
+
+  if (player[USER].ocean[row][col].taken) {
+    cout << red << "\nThe computer hit one of your ships!" << normal << "\n\n";
+    player[USER].ocean[row][col].board = "X";
   }
   else {
+    cout << "\nThe computer missed your fleet.\n\n";
+    player[USER].ocean[row][col].board = "O";
+  }
+}
 
-  }*/
+void Battleship::convertCoords()
+{
+  int count = 1;
+  coords = "";
+  colChar = ' ';
+  col = 0;
+  row = 0;
+
+  getline(cin, coords);
+  strLen = coords.length();
+
+  for (int i = (strLen - 1); i >= 1; i--) {
+    row += ((coords[i] - 48) * count);
+    count *= 10;
+  }
+
+  colChar = toupper(coords[0]);
+  col = colChar - 64;
 }
 
 void Battleship::hitEnter()
@@ -618,3 +702,9 @@ void Battleship::hitEnter()
   cout << "Press Enter to continue.\n";
   cin.ignore();
 }
+/*
+a1, y
+g3, no
+d6, y
+h8, no
+b10, y*/
