@@ -1,18 +1,10 @@
-/*
-2. //Specification B2 - Log file to Disk
-Record the battle in a time-stamped log file to disk. The timestamp should contain the run date and the time an activity occurred. Call the output file "log.txt".
-
-2. // Specification A2 - MultiFire Game
-This is a game option. Allow each side to fire once for each ship still afloat. Allow players to activate this option at the start of the game.
-
-*/
-
 // bb.cpp
 // Erroll Abrahamian, CISP 400
 // 03-24-2019
 
 #include <iostream>
 #include <thread>
+#include <fstream>
 using namespace std;
 
 enum Ships_Enum {CARRIER, BATTLESHIP, CRUISER, SUBMARINE, DESTROYER};
@@ -28,10 +20,7 @@ struct Player
   {
     string shipType, shipMark;
     int shipSize;
-    bool shipSunk;//, placed;
-    /*
-
-    */
+    bool shipSunk;
   } ship[5];
 
   struct Ocean
@@ -49,7 +38,7 @@ private:
   char blue[8] = {0x1b, '[', '1', ';', '3', '4', 'm', 0};
   char red[8] = {0x1b, '[', '1', ';', '3', '1', 'm', 0};
   char colChar;
-  int row, col, strLen;
+  int row, col, strLen, dtYear, dtMonth, dtDay, dtHour, dtMin, dtSec;
   bool showHidden = false, gameOver = false, multifire;
   string coords;
 public:
@@ -65,6 +54,7 @@ public:
   void compShot();
   void convertCoords();
 	void hitEnter();
+  void getDate();
 };
 
 int main()
@@ -86,7 +76,7 @@ int main()
 
 void Battleship::sayHi()
 {
-  cout << "Hi!\n\n";
+  cout << "Hi! Welcome to Battleship!\n\n";
 	cout << "A missed shot will be marked with \"" << blue << "O" << normal << "\".\n";
 	cout << "A hit will be marked with \"" << red << "X" << normal << "\".\n";
 	cout << "Open ocean is indicated with \"" << blue << "≈" << normal << "\".\n\n";
@@ -101,7 +91,16 @@ void Battleship::sayHi()
 	cout << "You will see two maps: one of your ships with the results of shots from the computer,\n";
 	cout << "and the computer's map, with the results of your shots.\n\n";
 
+  cout << "Hint: Entering X0 as your firing coordinates will show you the opponent's map.\n\n";
+
 	printBoard();
+
+  //Specification B2 - Log file to Disk
+  getDate();
+  ofstream gameFile;
+  gameFile.open("log.txt", ios::app);
+  gameFile << dtMonth << "-" << dtDay << "-" << dtYear << "\n";
+  gameFile.close();
 
 	hitEnter();
 
@@ -118,31 +117,26 @@ void Battleship::buildShips()
   player[USER].ship[CARRIER].shipMark = "C";
   player[USER].ship[CARRIER].shipSize = 5;
   player[USER].ship[CARRIER].shipSunk = false;
-  // player[USER].ship[CARRIER].placed = false;
 
   player[USER].ship[BATTLESHIP].shipType = "Battleship";
   player[USER].ship[BATTLESHIP].shipMark = "B";
   player[USER].ship[BATTLESHIP].shipSize = 4;
   player[USER].ship[BATTLESHIP].shipSunk = false;
-  // player[USER].ship[BATTLESHIP].placed = false;
 
   player[USER].ship[CRUISER].shipType = "Cruiser";
   player[USER].ship[CRUISER].shipMark = "Z";
   player[USER].ship[CRUISER].shipSize = 3;
   player[USER].ship[CRUISER].shipSunk = false;
-  // player[USER].ship[CRUISER].placed = false;
 
   player[USER].ship[SUBMARINE].shipType = "Submarine";
   player[USER].ship[SUBMARINE].shipMark = "S";
   player[USER].ship[SUBMARINE].shipSize = 3;
   player[USER].ship[SUBMARINE].shipSunk = false;
-  // player[USER].ship[SUBMARINE].placed = false;
 
   player[USER].ship[DESTROYER].shipType = "Destroyer";
   player[USER].ship[DESTROYER].shipMark = "D";
   player[USER].ship[DESTROYER].shipSize = 2;
   player[USER].ship[DESTROYER].shipSunk = false;
-  // player[USER].ship[DESTROYER].placed = false;
 
   player[COMP].name = "Computer";
 
@@ -152,31 +146,26 @@ void Battleship::buildShips()
   player[COMP].ship[CARRIER].shipMark = "C";
   player[COMP].ship[CARRIER].shipSize = 5;
   player[COMP].ship[CARRIER].shipSunk = false;
-  // player[COMP].ship[CARRIER].placed = false;
 
   player[COMP].ship[BATTLESHIP].shipType = "Battleship";
   player[COMP].ship[BATTLESHIP].shipMark = "B";
   player[COMP].ship[BATTLESHIP].shipSize = 4;
   player[COMP].ship[BATTLESHIP].shipSunk = false;
-  // player[COMP].ship[BATTLESHIP].placed = false;
 
   player[COMP].ship[CRUISER].shipType = "Cruiser";
   player[COMP].ship[CRUISER].shipMark = "Z";
   player[COMP].ship[CRUISER].shipSize = 3;
   player[COMP].ship[CRUISER].shipSunk = false;
-  // player[COMP].ship[CRUISER].placed = false;
 
   player[COMP].ship[SUBMARINE].shipType = "Submarine";
   player[COMP].ship[SUBMARINE].shipMark = "S";
   player[COMP].ship[SUBMARINE].shipSize = 3;
   player[COMP].ship[SUBMARINE].shipSunk = false;
-  // player[COMP].ship[SUBMARINE].placed = false;
 
   player[COMP].ship[DESTROYER].shipType = "Destroyer";
   player[COMP].ship[DESTROYER].shipMark = "D";
   player[COMP].ship[DESTROYER].shipSize = 2;
   player[COMP].ship[DESTROYER].shipSunk = false;
-  // player[COMP].ship[DESTROYER].placed = false;
 }
 
 void Battleship::buildBoard()
@@ -500,6 +489,7 @@ void Battleship::playGame()
   do {
     // if it's the user's turn...
     if (userTurn) {
+      // Specification A2 - MultiFire Game
       if (multifire)
         numShots = player[COMP].shipCount;
       else
@@ -510,19 +500,19 @@ void Battleship::playGame()
 
         // ...ask for coordinates...
         getShot();
+
         if (gameOver) {
           cout << "Congratulations, you sank their fleet!\n\n";
           break;
         }
         else {
-          cout << "You have " << player[USER].shipCount << " ships remaining,\n";
-          cout << "and the computer has " << player[COMP].shipCount << " ships remaining.\n\n";
+          cout << "Your ships remaining: " << player[USER].shipCount << "\n";
+          cout << "Computer ships remaining: " << player[COMP].shipCount << "\n";
         }
-        // printBoard();
-        hitEnter();
         numShots--;
         if (multifire)
-          cout << "You have " << numShots << " shots remaining.\n";
+          cout << "Shots remaining: " << numShots << "\n\n";
+        hitEnter();
       } while(numShots > 0);
     }
     else {
@@ -534,22 +524,22 @@ void Battleship::playGame()
         userTurn = true;
         cout << "IT IS THE COMPUTER'S MOVE\n";
         compShot();
+        printBoard();
         if (gameOver) {
           cout << "The computer sank your fleet.\n\n";
           break;
         }
-        printBoard();
-        hitEnter();
+        else {
+          cout << "Your ships remaining: " << player[USER].shipCount << "\n";
+          cout << "Computer ships remaining: " << player[COMP].shipCount << "\n";
+        }
         numShots--;
         if (multifire)
-          cout << "The computer has " << numShots << " shots remaining.\n";
+          cout << "The computer has " << numShots << " shots remaining.\n\n";
+        hitEnter();
       } while(numShots > 0);
     }
-  } while(!gameOver);// || !quit);
-
-
-
-  //} while(!quit);
+  } while(!gameOver);
 }
 
 bool Battleship::coinToss()
@@ -561,8 +551,6 @@ bool Battleship::coinToss()
 void Battleship::getShot()
 {
   bool turnOver;
-  //  int count;
-  // int x, y;
 
   do {
     turnOver = false;
@@ -600,16 +588,30 @@ void Battleship::getShot()
         turnOver = true;
         // mark the coords as targeted
         player[COMP].ocean[row][col].targeted = true;
+        cout << "\nYou aim at " << colChar << row << "\n";
 
         // if there is a ship present...
         if (player[COMP].ocean[row][col].taken) {
           cout << red << "\nYou hit an enemy ship!" << normal << "\n\n";
+
+          getDate();
+          ofstream gameFile;
+          gameFile.open("log.txt", ios::app);
+          gameFile << dtHour << ":" << dtMin << ":" << dtSec << ": Player hit an enemy ship at " << colChar << row << ".\n";
+          gameFile.close();
+
           if (player[COMP].ocean[row][col].hidden == "C") {
             player[COMP].ship[CARRIER].shipSize -= 1;
             if (player[COMP].ship[CARRIER].shipSize == 0) {
               player[COMP].ship[CARRIER].shipSunk = true;
               player[COMP].shipCount -= 1;
               cout << red << "...and you sank their Carrier!" << normal << "\n\n";
+
+              getDate();
+              ofstream gameFile;
+              gameFile.open("log.txt", ios::app);
+              gameFile << dtHour << ":" << dtMin << ":" << dtSec << ": Player sank the enemy carrier.\n";
+              gameFile.close();
             }
           }
           else if (player[COMP].ocean[row][col].hidden == "B") {
@@ -618,6 +620,12 @@ void Battleship::getShot()
               player[COMP].ship[BATTLESHIP].shipSunk = true;
               player[COMP].shipCount -= 1;
               cout << red << "...and you sank their Battleship!" << normal << "\n\n";
+
+              getDate();
+              ofstream gameFile;
+              gameFile.open("log.txt", ios::app);
+              gameFile << dtHour << ":" << dtMin << ":" << dtSec << ": Player sank the enemy battleship.\n";
+              gameFile.close();
             }
           }
           else if (player[COMP].ocean[row][col].hidden == "Z") {
@@ -626,6 +634,12 @@ void Battleship::getShot()
               player[COMP].ship[CRUISER].shipSunk = true;
               player[COMP].shipCount -= 1;
               cout << red << "...and you sank their Cruiser!" << normal << "\n\n";
+
+              getDate();
+              ofstream gameFile;
+              gameFile.open("log.txt", ios::app);
+              gameFile << dtHour << ":" << dtMin << ":" << dtSec << ": Player sank the enemy cruiser.\n";
+              gameFile.close();
             }
           }
           else if (player[COMP].ocean[row][col].hidden == "S") {
@@ -634,6 +648,12 @@ void Battleship::getShot()
               player[COMP].ship[SUBMARINE].shipSunk = true;
               player[COMP].shipCount -= 1;
               cout << red << "...and you sank their Submarine!" << normal << "\n\n";
+
+              getDate();
+              ofstream gameFile;
+              gameFile.open("log.txt", ios::app);
+              gameFile << dtHour << ":" << dtMin << ":" << dtSec << ": Player sank the enemy submarine.\n";
+              gameFile.close();
             }
           }
           else {
@@ -642,6 +662,12 @@ void Battleship::getShot()
               player[COMP].ship[DESTROYER].shipSunk = true;
               player[COMP].shipCount -= 1;
               cout << red << "...and you sank their Destroyer!" << normal << "\n\n";
+
+              getDate();
+              ofstream gameFile;
+              gameFile.open("log.txt", ios::app);
+              gameFile << dtHour << ":" << dtMin << ":" << dtSec << ": Player sank the enemy destroyer.\n";
+              gameFile.close();
             }
           }
 
@@ -654,6 +680,13 @@ void Battleship::getShot()
         // ...or not
         else {
           cout << blue << "\nMiss! You hit open ocean!" << normal << "\n\n";
+
+          getDate();
+          ofstream gameFile;
+          gameFile.open("log.txt", ios::app);
+          gameFile << dtHour << ":" << dtMin << ":" << dtSec << ": Player hit empty ocean.\n";
+          gameFile.close();
+
           player[COMP].ocean[row][col].board = "O";
           player[COMP].ocean[row][col].hidden = "O";
         }
@@ -721,9 +754,16 @@ void Battleship::hitEnter()
   cout << "Press Enter to continue.\n";
   cin.ignore();
 }
-/*
-a1, y
-g3, no
-d6, y
-h8, no
-b10, y*/
+
+void Battleship::getDate()
+{
+  time_t now = time(0);
+  tm *dateTime = localtime(&now);
+
+  dtYear = (1900 + dateTime->tm_year);
+  dtMonth = (1 + dateTime->tm_mon);
+  dtDay = dateTime->tm_mday;
+  dtHour = dateTime->tm_hour;
+  dtMin = dateTime->tm_min;
+  dtSec = dateTime->tm_sec;
+}
