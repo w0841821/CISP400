@@ -1,22 +1,9 @@
 /*
-"B" Specification Bundle.
-1. // Specification B1 - Validate Input
-Only allow valid map squares to be targeted.
-
 2. //Specification B2 - Log file to Disk
-Record the battle in a time-stamped log file to disk. The timestamp
-should contain the run date and the time an activity occurred. Call
-the output file "log.txt".
+Record the battle in a time-stamped log file to disk. The timestamp should contain the run date and the time an activity occurred. Call the output file "log.txt".
 
 2. // Specification A2 - MultiFire Game
 This is a game option. Allow each side to fire once for each ship still afloat. Allow players to activate this option at the start of the game.
-
-3. // Specification A3 - Cruise Missiles
-A modern update to the game. Each side fires as the original game, but instead of cannon shells, each side shoots cruise missiles. Each ship has a chance (80%) to shoot down incoming missiles (and report to you about it). Ships can only shoot down missiles targeted at their ship (i.e. if they don’t shoot it down it will hit their ship). Similar to A2, this is an option you can set at the start of the game, OR ,
-
-4. // Specification A3 - Random Human Start
-Allow the human player to place their ships. As with B2, make
-sure the placement is allowable.
 
 */
 
@@ -291,6 +278,7 @@ void Battleship::placeShips()
       cout << "otherwise they will be placed to the right from that point.\n";
       cout << "Directions will be flipped if the ship would run off the board.\n\n";
     }
+
     // place all their ships
     for (int j = 0; j < 5; j++) {
       do {
@@ -299,6 +287,7 @@ void Battleship::placeShips()
         if (i == 0) {
           printBoard();
 
+          // Specification A3 - Random Human Start
           cout << "Where would you like to place your " << player[USER].ship[j].shipType << "?" << endl;
 
           convertCoords();
@@ -406,6 +395,8 @@ void Battleship::placeShips()
     } // end of ship
   } // end of player
 
+  printBoard();
+
   cout << "Are you ready to sink some ships?\n";
   hitEnter();
   system("clear");
@@ -478,11 +469,13 @@ void Battleship::printBoard()
 
 void Battleship::gameMode()
 {
-  cout << "You have the option to...\n";
+  int menu;
+  cout << "You have the option to...\n\n";
   cout << "1. Play a regular game or...\n";
   cout << "2. Have the ability to fire once for each enemy ship still afloat.\n";
-  cout << "Which do you choose?\n";
+  cout << "Which do you choose?\n\n";
   cin >> menu;
+  cin.ignore();
   switch (menu) {
     case 1: multifire = false;
       break;
@@ -490,21 +483,28 @@ void Battleship::gameMode()
       break;
     default: cout << "Oops, not a valid option.\n";
   }
+
+  cout << "Alright, let's play!!\n\n";
+  hitEnter();
 }
 
 void Battleship::playGame()
 {
   bool userTurn;//, quit;
+  int numShots;
 
   // main game loop
   userTurn = coinToss();
   showHidden = false;
   gameOver = false;
   do {
-    //quit = false;
-    //    do {
     // if it's the user's turn...
     if (userTurn) {
+      if (multifire)
+        numShots = player[COMP].shipCount;
+      else
+        numShots = 1;
+      do {
         userTurn = false;
         cout << "IT IS YOUR TURN!\n\n";
 
@@ -514,10 +514,23 @@ void Battleship::playGame()
           cout << "Congratulations, you sank their fleet!\n\n";
           break;
         }
-        printBoard();
+        else {
+          cout << "You have " << player[USER].shipCount << " ships remaining,\n";
+          cout << "and the computer has " << player[COMP].shipCount << " ships remaining.\n\n";
+        }
+        // printBoard();
         hitEnter();
-      }
-      else {
+        numShots--;
+        if (multifire)
+          cout << "You have " << numShots << " shots remaining.\n";
+      } while(numShots > 0);
+    }
+    else {
+      if (multifire)
+        numShots = player[USER].shipCount;
+      else
+        numShots = 1;
+      do {
         userTurn = true;
         cout << "IT IS THE COMPUTER'S MOVE\n";
         compShot();
@@ -525,9 +538,14 @@ void Battleship::playGame()
           cout << "The computer sank your fleet.\n\n";
           break;
         }
+        printBoard();
         hitEnter();
-      }
-    } while(!gameOver);// || !quit);
+        numShots--;
+        if (multifire)
+          cout << "The computer has " << numShots << " shots remaining.\n";
+      } while(numShots > 0);
+    }
+  } while(!gameOver);// || !quit);
 
 
 
@@ -543,7 +561,7 @@ bool Battleship::coinToss()
 void Battleship::getShot()
 {
   bool turnOver;
-//  int count;
+  //  int count;
   // int x, y;
 
   do {
@@ -564,6 +582,7 @@ void Battleship::getShot()
     else if (strLen == 0 || strLen > 3) {
       cout << "\nDoesn't seem like proper coordinates.\n";
     }
+    // Specification B1 - Validate Input
     else if (coords[0] < 65 || (coords[0] > 74 && coords[0] < 97) || coords[0] > 106) {
       cout << "\nI don't think we have that column on the board!\n";
     }
