@@ -111,44 +111,32 @@ int main()
     getline(cin, taskCommand);
 
     // Specification C1 - + Symbol
-  /*  if ((taskCommand.compare(0, 1, "+") == 0) && (taskCommand.compare(1, 1, " ") == 0)) {
-        taskAdd = taskCommand.substr(2);
-
-      // protect against user entering just "+ "
-      if (taskAdd != "")
-        taskVec = taskVec + taskAdd;
-      else
-        cout << "If you'd like to enter a new task, don't forget a space after the +.\n";
-    }*/
     if (taskCommand.compare(0, 1, "+") == 0) {
+        // if user enters "+ "...
         if (taskCommand.compare(1, 1, " ") == 0) {
             taskAdd = taskCommand.substr(2);
+            // ...and there is text afterward...
             if (!taskAdd.empty())
                 taskVec = taskVec + taskAdd;
+            // ...or there is no text
+            else
+                cout << "I don't think you meant to add an empty task, did you?\n";
         }
+        // if the user doesn't include a space after +
         else
-        {
             cout << "If you'd like to enter a new task, don't forget a space after the +.\n";
-        }
-        
-      
-
-      // protect against user entering just "+ "
-//      if (taskAdd != "")
- //       taskVec = taskVec + taskAdd;
-  //    else
-        
     }
 
     // Specification C3 - - symbol
-    // code to use ID number
-    else if (taskCommand.compare(0, 2, "- ") == 0) {
-      taskDel = taskCommand.substr(2);
-
-      if (taskDel != "")
-        taskVec = taskVec - taskDel;
-      else
-        cout << "Not valid input.\n";
+    else if (taskCommand.compare(0, 1, "-") == 0) {
+        if (taskCommand.compare(1, 1, " ") == 0) {
+            // remove task
+            taskDel = taskCommand.substr(2);
+            if (!taskDel.empty())
+                taskVec = taskVec - taskDel;
+        }
+        else
+            cout << "If you'd like to remove a task, don't forget a space after the -.\n";
     }
 
     // Specification C2 - ? Symbol
