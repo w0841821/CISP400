@@ -1,18 +1,11 @@
 // TODO.cpp
-// Erroll Abrahamian
+// Erroll Abrahamian, CISP 400
 // 04-07-2019
-
-/*
-//Specification B2 - Save to disk
-Save the TODOs so they persist when the program is restarted.
-
-// Specification A2 - Copy Constructor
-Decide how you want to deal with copying your TODO class(es). Then implement it.
-*/
 
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <fstream>
 using namespace std;
 
 class Tasks
@@ -28,6 +21,13 @@ public:
   // Specification A3 - Assignment
   Tasks() {taskNum = 0; taskName = ""; taskDate = "";}
 
+  // Specification A2 - Copy Constructor
+  Tasks(const Tasks &t) {
+    taskNum = t.taskNum;
+    taskName = t.taskName;
+    taskDate = t.taskDate;
+  }
+
   int getTaskNum() const {return taskNum;}
   string getTaskName() const {return taskName;}
   string getTaskDate() const {return taskDate;}
@@ -37,11 +37,14 @@ class ToDoList
 {
 private:
   vector<Tasks> taskVec;
-  int taskNumMax = 1;
+  int taskNumMax;
 
 public:
   string getDate();
-    void sayHi();
+  void sayHi();
+  void openTasks();
+  void saveTasks();
+  void hitEnter();
 
   ToDoList operator+ (const string &str);
   ToDoList operator- (const string &str);
@@ -51,13 +54,15 @@ public:
 // Specification A1 - Overload symbols
 ToDoList ToDoList::operator+ (const string &str)
 {
-  Tasks tempTask;
+  Tasks tmp;
 
-  tempTask.taskNum = taskNumMax;
-  tempTask.taskName = str;
-  tempTask.taskDate = getDate();
+  tmp.taskNum = taskNumMax;
+  tmp.taskName = str;
+  tmp.taskDate = getDate();
 
-  taskVec.push_back(tempTask);
+  Tasks t = tmp;
+
+  taskVec.push_back(t);
   taskNumMax++;
 
   cout << "Added: " << str << " to the list!\n";
@@ -85,7 +90,7 @@ ToDoList ToDoList::operator- (const string &str)
 // Specification B1 - Overload «
 ostream &operator<< (ostream &out, const ToDoList &t)
 {
-  // format width of number column to make output consistent
+  // format width of number column to make output consistently aligned
   int wid = (t.taskNumMax / 10) + 1;
 
   cout << setw(wid) << "#" << "   " << "TASKS\n";
@@ -100,6 +105,7 @@ int main()
   ToDoList taskVec;
 
   taskVec.sayHi();
+  taskVec.openTasks();
 
   string taskCommand = "null";
   string taskAdd = "";
@@ -142,6 +148,7 @@ int main()
     // Specification C2 - ? Symbol
     else if (taskCommand.compare(0, 1, "?") == 0) {
       cout << taskVec;
+      //  cout << "Looks like you don't have any tasks yet! Why don't you enter some?\n";
     }
 
     else if (taskCommand.compare(0, 1, "!") == 0) {
@@ -153,6 +160,8 @@ int main()
       cout << "Not valid input.\n";
   }
 
+  taskVec.saveTasks();
+
   return 0;
 }
 
@@ -163,7 +172,7 @@ string ToDoList::getDate()
   time_t now = time(0);
   tm *dateTime = localtime(&now);
 
-    int dtYear = (1900 + dateTime->tm_year);
+  int dtYear = (1900 + dateTime->tm_year);
   int dtMonth = (1 + dateTime->tm_mon);
   int dtDay = dateTime->tm_mday;
 
@@ -182,7 +191,7 @@ string ToDoList::getDate()
   else
     strDay = to_string(dtDay);
 
-    date = to_string(dtYear) + "/" + strMonth + "/" + strDay;
+  date = to_string(dtYear) + "/" + strMonth + "/" + strDay;
 
   return date;
 }
@@ -201,4 +210,62 @@ void ToDoList::sayHi()
     cout << "A task will be removed using \"- \" and the task number, for example:\n\n";
     cout << "- 1\n\n";
     cout << "When you're finished, enter \"!\" to quit!\n\n";
+    hitEnter();
+}
+
+void ToDoList::openTasks()
+{
+  Tasks tempTask;
+  ifstream taskFile;
+
+  taskFile.open("task.txt");
+
+  string catchString = "";
+  if (!taskFile) {
+    cout << "Looks like you don't have any saved tasks!\n\n";
+    taskNumMax = 1;
+  }
+  else
+  {
+    while (!taskFile.eof()) {
+      getline(taskFile, catchString, ',');
+
+      if (!catchString.empty())
+        tempTask.taskNum = stoi(catchString);
+      else
+        break;
+
+      getline(taskFile, catchString, ',');
+      tempTask.taskDate = catchString;
+      getline(taskFile, catchString, ',');
+      tempTask.taskName = catchString;
+
+      taskVec.push_back(tempTask);
+    }
+
+  taskFile.close();
+
+  taskNumMax = taskVec.back().taskNum + 1;
+  }
+}
+
+//Specification B2 - Save to disk
+void ToDoList::saveTasks()
+{
+  ofstream taskFile;
+
+  if (taskVec.empty())
+    return;
+  else {
+    taskFile.open("task.txt");
+    for (size_t i = 0; i < taskVec.size(); i++) {
+      taskFile << taskVec[i].taskNum << "," << taskVec[i].taskDate << "," << taskVec[i].taskName << ",";
+    }
+  }
+}
+
+void ToDoList::hitEnter()
+{
+  cout << "Press Enter to continue.\n";
+  cin.ignore();
 }
