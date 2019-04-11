@@ -42,6 +42,9 @@ Use file I/O to save and restore the game. This means you store the current valu
 #include <thread>
 using namespace std;
 
+const string NORMAL("\033[0;39m");
+const string TEAL("\033[1;36m");
+
 // Base class
 // Specification C2 - Virtual Class Creature
 class Creature {
@@ -59,7 +62,7 @@ public:
 protected:
   int hunger;
   int boredom;
-  int happy; // boredom of 0-4
+  int happy = 0; // boredom of 0-4
   string name;
   bool dead;
   bool coma;
@@ -69,7 +72,8 @@ protected:
 // Specification C3 - Child Class
 class Hokeemon: public Creature {
 public:
-  string getName() { return name; }
+	Hokeemon();
+	string getName() { return name; }
   int getHunger() { return hunger; }
   int getBoredom() { return boredom; }
   bool isDead() { return dead; }
@@ -80,6 +84,14 @@ public:
   void feed();
   void passTime();
 };
+
+Hokeemon::Hokeemon()
+{
+	hunger = (rand() % 6);
+	boredom = (rand() % 6);
+  setDead(false);
+  setComa(false);
+}
 
 int main() {
   srand(time(0));
@@ -97,14 +109,18 @@ void Hokeemon::game()
   cin >> hokName;
 
   h.setName(hokName);
-  h.setHunger((rand() % 6));
-  h.setBoredom((rand() % 6));
-  h.setDead(false);
-  h.setComa(false);
+//  h.setHunger((rand() % 6));
+//  h.setBoredom((rand() % 6));
+//  h.setDead(false);
+//  h.setComa(false);
 
-  cout << "Hokeemon name: " << h.getName() << endl;
-  cout << "Hokeemon hunger: " << h.getHunger() << endl;
-  cout << "Hokeemon boredom: " << h.getBoredom() << endl;
+  // cout << h.name << endl;
+  // cout << "Hokeemon name: " << h.getName() << endl;
+  cout << "Your Hokeemon is " << h.name << "!" << endl;
+  // cout << "Hokeemon hunger: " << h.getHunger() << endl;
+  cout << h.name << "'s hunger: " << h.hunger << endl;
+  // cout << "Hokeemon boredom: " << h.getBoredom() << endl;
+  cout << h.name << "'s boredom: " << h.boredom << endl;
 
   int menu;
   bool quit = false;
@@ -128,6 +144,7 @@ void Hokeemon::game()
         break;
       case 4:
         quit = true;
+        break;
       default:
         cout << "Not valid input. Try again.\n";
     }
@@ -154,15 +171,15 @@ void Creature::setBoredom(int b)
   }
   else
     boredom = 0;
-  if (boredom < 5)
-    happy++;
 }
 
 void Hokeemon::listen()
 {
   cout << "\nListening...\n";
-  cout << "Hunger: " << getHunger() << endl;
-  cout << "Boredom: " << getBoredom() << endl;
+  // cout << "Hunger: " << getHunger() << endl;
+  cout << "Hunger: " << hunger << endl;
+  cout << TEAL << name << "'s boredom: " << boredom << NORMAL << endl;
+  // cout << "Boredom: " << getBoredom() << endl;
 }
 
 void Hokeemon::play()
@@ -189,8 +206,12 @@ void Hokeemon::passTime()
   setHunger(getHunger() + 1);
   cout << "Hunger: " << getHunger() << endl;
   setBoredom(getBoredom() + 1);
-  cout << "Boredom: " << getBoredom() << endl;
+  cout << TEAL << name << "'s boredom: " << boredom << NORMAL << endl;
+  // cout << "Boredom: " << getBoredom() << endl;
 
+  if (boredom < 5)
+    happy++;
+  cout << TEAL << name << " has been happy for " << happy << " turns!" << NORMAL << endl;
   if (isDead()) {
     cout << "It's dead! :(\n";
   }
