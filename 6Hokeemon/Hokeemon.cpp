@@ -2,32 +2,10 @@
 // Erroll Abrahamian, CISP 400
 // 05-05-2019
 
-/*
-
-// Specification B3 - Second Child Class
-Implement a second, different, child class. You can choose which class to play with or play with both of them!
-
-// Specification A2 - Copy Constructor/Assignment Operator
-Decide how you want to handle these in your classes and code accordingly.
-
-// Specification A3 - Code Protection
-Use asserts or exceptions in at least one method/function to make your code more robust and reliable.
-
-"X" Specification Bundle.
-You can use these for any of the other specification categories. Do not comment the specification you are replacing with one of these and use the specification comment in this section instead.
-
-// Specification X1 - Overload Operator?
-Choose an operator to overload. Replace the ? with the symbol you overloaded.
-
-// Specification X2 - Overload Operator??
-Same as X1, but with a different symbol.
-
-// Specification X3 - Save Game
-Use file I/O to save and restore the game. This means you store the current values of the Hokeemon you have been playing with.
-*/
-
 #include <iostream>
+#include <fstream>
 #include <thread>
+#include <cassert>
 using namespace std;
 
 const string NORMAL("\033[0;39m");
@@ -37,129 +15,140 @@ const string YELLOW("\033[0;93m");
 const string ORANGE("\033[0;91m");
 const string RED("\033[0;35m");
 
-// Base class
 // Specification C2 - Virtual Class Creature
 class Creature {
-public:
-  virtual int getHunger() = 0;
-  virtual int getBoredom() = 0;
-  virtual bool isDead() = 0;
-  virtual bool inComa() = 0;
-  void setName(string s) { name = s; }
-  void setHunger(int h);
-  void setBoredom(int b);
-  void setDead(bool d) { dead = d; }
-  void setComa(bool c) { coma = c; }
-
 protected:
-  int hunger;
-  int boredom;
-  int happy = 0; // boredom of 0-4
-  string name;
-  string listening;
-  string playing;
-  string passing;
-  string colorBoredom;
-  string levelBoredom;
-  string colorHunger;
-  bool dead;
-  bool coma;
+    string name, colorBoredom, colorHunger, levelBoredom, levelHunger, playing, feeding, passing, listening;
+    int hunger, boredom, happy;
+    bool dead, coma;
+
+public:
+    Creature(string creatureName) {
+        name = creatureName;
+        hunger = (rand() % 6);
+        boredom = (rand() % 6);
+        happy = 0;
+        dead = false;
+        coma = false;
+    }
+
+    virtual int getHunger() = 0;
+    virtual int getBoredom() = 0;
+    void setName(string s) { name = s; }
+    string getName() { return name; }
+    void setHunger(int h);
+    void setBoredom(int b);
+    void setHappy(int h);
 };
 
-// Derived classes
 // Specification C3 - Child Class
-class Hokeemon: public Creature {
+class Hoke: public Creature {
 public:
-	Hokeemon();
-	string getName() { return name; }
-    int getHunger() { return hunger; }
-    int getBoredom() { return boredom; }
-    void printHunger();
-    void printBoredom();
-    void printHappiness();
-    bool isDead() { return dead; }
-    bool inComa() { return coma; }
-    void game();
+    Hoke(string name): Creature(name) {}
+
+    virtual int getHunger() { return hunger; }
+    virtual int getBoredom() { return boredom; }
+
+    void textColor();
+    void countHappy(int h);
     void listen();
     void play();
     void feed();
     void passTime();
-    friend ostream& operator<< (ostream &out, const Hokeemon &hk);
+    bool isDead() { return dead; }
+    bool inComa() { return coma; }
+    void savegame();
+    void loadgame();
+    friend ostream& operator<< (ostream &out, const Hoke &hk);
 };
 
-ostream& operator<< (ostream &out, const Hokeemon &hk)
+// replaces B3
+// Specification X1 - Overload Operator<<
+ostream& operator<< (ostream &out, const Hoke &hk)
 {
-    cout << hk.name << "'s " << hk.colorBoredom << "boredom: " << hk.boredom << NORMAL << endl;
-    cout << hk.name << "'s " << hk.colorHunger << "hunger:  " << hk.hunger << NORMAL << endl;
+    cout << hk.colorHunger << "Hunger:  " << hk.hunger << " (" << hk.levelHunger << ")" << NORMAL << endl;
+    cout << hk.colorBoredom << "Boredom: " << hk.boredom << " (" << hk.levelBoredom << ")" << NORMAL << endl;
+    cout << "Happy turns: " << hk.happy << endl;
     return out;
-}
-
-Hokeemon::Hokeemon()
-{
-	hunger = (rand() % 6);
-	boredom = (rand() % 6);
-    setDead(false);
-    setComa(false);
 }
 
 int main() {
     srand(time(0));
+    string n;
+    int menu;
+    bool quit = false;
 
-    // say Hi!!!!!
+    // Program greeting
+    cout << "Have you owned a Hokeemon before? They can get hungry (up to 10), and bored (up to 20).\n";
 
-    Hokeemon hw6;
-    hw6.game();
-}
+    this_thread::sleep_for(1s);
+    cout << "You would rather take care of your Hokeemon though, right?\n";
 
-void Hokeemon::game()
-{
-  string hokName;
-  Hokeemon h;
+    this_thread::sleep_for(1s);
+    cout << "\n...right?\n\n";
 
-  // Specification A1 - Critter Name
-  cout << "What would you like to name your Hokeemon?\n";
-  cin >> hokName;
+    this_thread::sleep_for(1s);
+    cout << "You have the magic ability to see exactly how bored,\n";
 
-  h.setName(hokName);
-  cout << "\nYour Hokeemon is " << TEAL << h.name << NORMAL << "!" << endl;
-  cout << TEAL << h.name << NORMAL << " is born with " << h.hunger << " hunger and " << h.boredom << " boredom." << endl;
-  // cout << "Hokeemon boredom: " << h.getBoredom() << endl;
-//  cout << h.name << "'s boredom: " << h.boredom << endl;
+    this_thread::sleep_for(1s);
+    cout << "and how hungry your Hokeemon is at any given time.\n\n";
 
-  int menu;
-  bool quit = false;
+    this_thread::sleep_for(1s);
+    cout << "BUT!\n\n";
 
+    this_thread::sleep_for(1s);
+    cout << "Hokeemon like to sit around a lot, so they'll constantly get hungry and bored!\n";
+
+    // Specification A1 - Critter Name
+    cout << "What would you like to name your very own Hokeemon? ";
+    cin >> n;
+    Hoke hok(n);
+
+    system("clear");
+    cout << "Take good care of " << TEAL << hok.getName() << NORMAL << "!\n";
 
     do {
-        cout << "\n1. Listen\n2. Play\n3. Feed\n4. Quit\n\n";
+        // Specification B1 - Validate Input
+        cout << "\n1. Listen to your Hokeemon\n";
+        cout << "2. Feed (reduces hunger)\n";
+        cout << "3. Play (reduces boredom)\n";
+        cout << "4. Save\n";
+        cout << "5. Load\n";
+        cout << "6. Quit\n\n";
         cout << "Enter your choice: ";
         cin >> menu;
 
-        // Specification B1 - Validate Input
         switch (menu) {
             case 1:
-                h.listen();
-                h.passTime();
+                hok.listen();
+                hok.passTime();
                 break;
-
             case 2:
-                h.play();
-                h.passTime();
+                hok.feed();
+                hok.passTime();
                 break;
-
             case 3:
-                h.feed();
-                h.passTime();
+                hok.play();
+                hok.passTime();
                 break;
-
             case 4:
+                cout << "Saving\n";
+                hok.savegame();
+                break;
+            case 5:
+                cout << "Loading.\n";
+                hok.loadgame();
+                break;
+            case 6:
+                cout << "Hope you had fun!\n";
                 quit = true;
                 break;
-
             default:
-                cout << "Not valid input. Try again.\n";
+                cout << "Not valid.\n";
         }
-    } while(!quit && (!h.dead && !h.coma));
+    } while(!quit && (!hok.isDead() && !hok.inComa()));
+
+    return 0;
 }
 
 void Creature::setHunger(int h)
@@ -167,43 +156,55 @@ void Creature::setHunger(int h)
     if (h > 0) {
         hunger = h;
         if (h > 10)
-            setDead(true);
+            dead = true;
     }
     else
         hunger = 0;
+
+    // Specification A3 - Code Protection
+    assert(hunger >= 0);
 }
 
 void Creature::setBoredom(int b)
 {
     if (b > 0) {
         boredom = b;
-        if (b < 5)
-            happy++;
         if (b > 20)
-            setComa(true);
+            coma = true;
     }
     else
         boredom = 0;
+
+    assert(boredom >= 0);
 }
 
-void Hokeemon::printHunger()
+void Creature::setHappy(int h)
 {
-    if (hunger < 2)
+    happy = h;
+}
+
+void Hoke::textColor()
+{
+    if (hunger < 2) {
         colorHunger = GREEN;
-    else if (hunger < 5)
+        levelHunger = "full";
+    }
+    else if (hunger < 5) {
         colorHunger = YELLOW;
-    else if (hunger < 8)
+        levelHunger = "snacky";
+    }
+    else if (hunger < 8) {
         colorHunger = ORANGE;
-    else
+        levelHunger = "hungry";
+    }
+    else {
         colorHunger = RED;
+        levelHunger = "starving";
+    }
 
-    //cout << name << "'s " << colorHunger << "hunger:  " << hunger << NORMAL << endl;
-}
-
-void Hokeemon::printBoredom()
-{
     if (boredom < 5) {
         colorBoredom = GREEN;
+        // Specification B2 - Moods
         levelBoredom = "happy";
     }
     else if (boredom < 10) {
@@ -218,84 +219,116 @@ void Hokeemon::printBoredom()
         colorBoredom = RED;
         levelBoredom = "mad";
     }
-
-    //cout << name << "'s " << colorBoredom << "boredom: " << boredom << NORMAL << endl;
 }
 
-void Hokeemon::printHappiness()
+void Hoke::countHappy(int h)
 {
-    if (happy == 1)
-        cout << "Happy time: " << happy << " turn!" << endl;
-    else
-        cout << "Happy time: " << happy << " turns!" << endl;
+    if (h < 5)
+        happy++;
 }
 
-void Hokeemon::listen()
+void Hoke::listen()
 {
     listening = TEAL + "Listening to " + name + "..." + NORMAL;
-    cout << endl << listening << endl;
+    cout << "\n\n" << listening << endl;
     cout << string(listening.length() - 14, '-') << endl;
-  // cout << "\nListening...\n";
-  // cout << "Hunger: " << getHunger() << endl;
-//  cout << "Hunger: " << hunger << endl;
- // cout << TEAL << name << "'s boredom: " << boredom << NORMAL << endl;
 
-
+    textColor();
     cout << *this;
 }
 
-void Hokeemon::play()
+void Hoke::play()
 {
     playing = "Playing with " + TEAL + name + NORMAL + "...";
     cout << endl << playing << endl;
     cout << string(playing.length() - 14, '-') << endl;
 
-    cout << "\nPlaying...\n";
-    // printBoredom
-
-
-  cout << "Boredom goes from " << boredom << " to ";
-  setBoredom(boredom - 4);
-  cout << getBoredom() << "!\n";
+    cout << "Boredom goes from " << boredom << " to ";
+    setBoredom(boredom - 4);
+    cout << boredom << "!\n";
 }
 
-void Hokeemon::feed()
+void Hoke::feed()
 {
-  cout << "\nFeeding...\n";
-  cout << "Hunger goes from " << getHunger() << " to ";
-  setHunger(getHunger() - 4);
-  cout << getHunger() << "!\n";
+    feeding = "Feeding " + TEAL + name + NORMAL + "...";
+    cout << endl << feeding << endl;
+    cout << string(feeding.length() - 14, '-') << endl;
+
+    cout << "Hunger goes from " << hunger << " to ";
+    setHunger(hunger - 4);
+    cout << hunger << "!\n";
 }
 
 // Specification C1 - PassTime()
-void Hokeemon::passTime()
+void Hoke::passTime()
 {
     passing = TEAL + "Some time passes, making " + name + " hungrier and more bored..." + NORMAL;
 
-    this_thread::sleep_for(500ms);
-    cout << endl << passing << endl;
+    this_thread::sleep_for(1s);
+    cout << "\n\n" << passing << endl;
     cout << string(passing.length() - 14, '-') << endl;
-    this_thread::sleep_for(500ms);
 
-    setHunger(getHunger() + 1);
-    setBoredom(getBoredom() + 1);
-    //cout << TEAL << name << NORMAL << endl;
-    //cout << string(name.length(), '-') << endl;
-    printHunger();
-    printBoredom();
+    setHunger(hunger + 1);
+    setBoredom(boredom + 1);
+    countHappy(boredom);
+
+    textColor();
     cout << *this;
-    printHappiness();
 
-    if (isDead() && !inComa()) {
+    if (dead && !coma) {
         cout << "...but, it seems " << TEAL << name << NORMAL << " died from hunger! :(\n";
         cout << "Better luck with your next Hokeemon :(\n\n";
     }
-    else if (inComa() && !isDead()) {
-        cout << "...but, it seems " << TEAL << name << NORMAL << " fell into a coma from boredom! :(\n";
+    else if (coma && !dead) {
+        cout << "...but, it seems " << TEAL << name << NORMAL << " fell into a coma from maddening boredom! :(\n";
         cout << "Better luck with your next Hokeemon :(\n\n";
     }
-    else if (isDead() && inComa()) {
+    else if (dead && coma) {
         cout << "I don't think you should get a pet. " << TEAL << name << NORMAL << " fell into a coma from boredom,\n";
         cout << "AND died from hunger.\n\n";
+    }
+}
+
+// replaces A2
+// Specification X3 - Save Game
+void Hoke::savegame()
+{
+    ofstream saveFile;
+    saveFile.open("save.txt");
+
+    saveFile << name << "," << hunger << "," << boredom << "," << happy;
+
+    saveFile.close();
+
+    cout << "\nGame saved!\n\n";
+}
+
+void Hoke::loadgame()
+{
+    ifstream saveFile;
+    saveFile.open("save.txt");
+
+    string catchString = "";
+    if (!saveFile) {
+        cout << "Looks like you don't have a Hokeemon yet!\n\n";
+    }
+    else {
+        while (!saveFile.eof()) {
+            getline(saveFile, catchString, ',');
+            setName(catchString);
+
+            getline(saveFile, catchString, ',');
+            setHunger(stoi(catchString));
+
+            getline(saveFile, catchString, ',');
+            setBoredom(stoi(catchString));
+
+            getline(saveFile, catchString, ',');
+            setHappy(stoi(catchString));
+        }
+
+    saveFile.close();
+
+    cout << "\nGame loaded!\n\n";
     }
 }
